@@ -4,136 +4,63 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import math
 
+
 if __name__ == "__main__":
     from multiprocessing import Process, Queue
     import time
     import sys
     import os
+    sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
+    import TSLPy3 as ts
 
-def backtest_slice(q, name, i, x, y, z):
-    obj = Strategy(x, y, z, name)
-    obj.backtest(plot=True)
-    stat_df = obj.stat_df
-    q.put(stat_df)
-    print("Process end", i)
-    # q.put(pd.DataFrame([[1,2,3], [4,5,6]]))
+
+
+class TsTickData(object):
+
+    def __enter__(self):
+        if ts.Logined() is False:
+            print('天软未登陆或客户端未打开，将执行登陆操作')
+            self.__tsLogin()
+            return self
+
+    def __tsLogin(self):
+        ts.ConnectServer("tsl.tinysoft.com.cn", 443)
+        dl = ts.LoginServer("fzzqjyb", "fz123456")
+        print('天软登陆成功')
+
+    def __exit__(self, *arg):
+        ts.Disconnect()
+        print('天软连接断开')
+
+
+
+    def ticks(self):
+        ts_sql = ''' 
+        setsysparam(pn_stock(),'SH510500');
+        setsysparam(pn_precision(),3);   
+        rds := rd(6);
+        return rds;
+        '''
+        fail, value, _ = ts.RemoteExecute(ts_sql, {})
+        return value
+
+def backtest_slice(q, backtest_data, plot=False):
+    obj = Strategy(backtest_data=backtest_data)
+    obj.backtest(plot)
+    q.put(obj.stat_df)
+    print("Process end")
 
 
 
 class Strategy():
-    def __init__(self, x1, y, z, name=None, fake=False) -> None:
-        if fake is True:
+    def __init__(self, backtest_data=None) -> None:
+        if backtest_data is None:
             return
-        if name is None:
-            self.all_data = pd.read_csv("SH510500.csv")
-        else:
-            self.all_data = pd.read_csv(name)
+        self.all_data = pd.read_csv(backtest_data)
         self.all_data["price"] = self.all_data["price"].apply(lambda x: round(x, 3))
         self.all_data = self.all_data[["date", "time", "price"]]
         self.date_list = sorted(list(set(self.all_data["date"])))
-        x = list(range(14400))
-        self.xM = x[:: 30]
-        self.xtick = list(range(0, 14401, 1800))
-        self.xticklabel = ["9:30", "10:00", "10:30", "11:00", "11:30/1:00", "1:30", "2:00", "2:30", "3:00"]
         self.plot = True
-        self.defaultParam(x1, y, z)
-
-    def defaultParam(self, x, y, z) -> None:
-        ################ Minute data
-        # self.P_NS_1 = 3
-        # self.P_NS_2 = 6
-        # self.P_NS_3 = 3
-        # self.P_NS_4 = 3
-        # self.P_NS_5 = 4
-        # self.P_CON_1 = 3
-        # self.P_CON_2 = 6
-        # self.P_CON_3 = 3
-        # self.P_CON_4 = 3
-        # self.P_CON_5 = 4
-        # self.P_RAPB_1 = 12
-        # self.P_RAPS_1 = 12
-        # self.P_W_1 = 2 / 3
-        # self.P_W_2 = 3 / 4
-        # self.P_L_1 = 15
-        # self.P_L_2 = 30
-        # self.P_L_3 = 12
-        # self.P_h1_W = 0
-        # self.P_R_ADJ = 0
-
-
-        # self.P_NS_1 = 4
-        # self.P_NS_2 = 6
-        # self.P_NS_3 = 3
-        # self.P_NS_4 = 3
-        # self.P_NS_5 = 4
-        # self.P_CON_1 = 3
-        # self.P_CON_2 = 6
-        # self.P_CON_3 = 3
-        # self.P_CON_4 = 4
-        # self.P_CON_5 = 4
-        # self.P_RAPB_1 = 9
-        # self.P_RAPS_1 = 13
-        # self.P_W_1 = 0.7
-        # self.P_W_2 = 0.8
-        # self.P_L_1 = 15
-        # self.P_L_2 = 30
-        # self.P_L_3 = 12
-        # self.P_h1_W = 0
-        # self.P_R_ADJ = 0
-        # # self.switch= [True, True,    False, False, False, False, True, True,    True,True, False,True,True, True]
-        # self.switch= [True, True,    False, False, False, False, True, False,    False, False, False,True,True, False]
-
-        ###################### 30S data
-        # self.P_NS_1 = 3
-        # self.P_NS_2 = 5
-        # self.P_NS_3 = 3
-        # self.P_NS_4 = 3
-        # self.P_NS_5 = 3
-        # self.P_CON_1 = 3
-        # self.P_CON_2 = 5
-        # self.P_CON_3 = 3
-        # self.P_CON_4 = 3
-        # self.P_CON_5 = 3
-        # self.P_RAPB_1 = 9
-        # self.P_RAPS_1 = 9
-        # self.P_W_1 = 0.6
-        # self.P_W_2 = 0.8
-        # self.P_L_1 = 15
-        # self.P_L_2 = 30
-        # self.P_L_3 = 12
-        # self.P_h1_W = 0
-        # self.P_R_ADJ = 0
-        # self.switch = [True, True,   True, True, True, True, True, True,       True, True, True, True, True, True]
-        self.P_NS_1 = 3
-        self.P_NS_2 = 6
-        self.P_NS_3 = 3
-        self.P_NS_4 = 4
-        self.P_NS_5 = 4
-        self.P_CON_1 = 2 # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
-        self.P_CON_2 = 6
-        self.P_CON_3 = 3
-        self.P_CON_4 = 2
-        self.P_CON_5 = 5
-        self.P_RAPB_1 = 9
-        self.P_RAPS_1 = 9
-        self.P_W_1 = 0.6
-        self.P_W_2 = 0.8
-        self.P_L_1 = 15
-        self.P_L_2 = 30
-        self.P_L_3 = 12
-        self.P_h1_W = 0
-        self.P_R_ADJ = 0
-        self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
-        self.switch = [True,] * 14
-        self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
-
-
-
-    def get_oneday_data(self, date: str) -> pd.DataFrame:
-        df = self.all_data[self.all_data["date"] == date].copy()
-        if df.shape[0] < 14400:
-            raise ValueError("Data is not complete or data is missing on " + date)
-        return self.all_data[self.all_data["date"] == date].copy()
 
     def getRapidOS(self, ls: list) -> (str, str, int):
         '''
@@ -147,71 +74,9 @@ class Strategy():
         :return: (str, str, int). first str: 1 for open long, -1 for open short, 0 for no signal;
                 second str: signal type; int: h2
         '''
-        pb1 = self.P_RAPB_1
-        ps1 = self.P_RAPS_1
-        switch = self.switch
-
-        z1, z2 = ls
-        h1 = z1 + z2
-        if switch[0] and h1 >= pb1:
+        h1 = sum(ls)
+        if h1 >= 9:
             return 'B', "RAP", h1
-        if switch[1] and h1 <= -ps1:
-            return 'S', "RAP", h1
-        else:
-            return None, None, 0
-
-    def getNStyleOS(self, ls: list) -> (str, str, int):
-        '''
-        Get N-style Open Signal
-
-        ls: list, list of slope: [ -3 min, -2 min, -1 min, 0 min]
-
-        Type 1 condition: (Assume Open Long)
-                   1. x1 = x2 = x3 = 1
-                   2. d1 >= 6, h1 >= 3, d2 < 0
-                   3. abs(d2) <= 1 / 2 * d1
-                   4. h1 >= 2 * abs(d2)
-
-        Type 2 condition: (Assume Open Long)
-                   1. x1 = 2, x2 = x3 = 1
-                   2. d1 >= 6, h1 >= 3, d2 < 0
-                   3. abs(d2) <= 1 / 2 * d1
-                   4. h1 >= 2 * abs(d2)
-
-        :return: (str, str, int). first str: 1 for open long, -1 for open short, 0 for no signal;
-                second str: signal type; int: h2
-        '''
-        p1 = self.P_NS_1
-        p2 = self.P_NS_2
-        p3 = self.P_NS_3
-        p4 = self.P_NS_4
-        p5 = self.P_NS_5
-        switch = self.switch
-
-        z1, z2, z3, z4 = ls
-        # Type 1
-        d1, d2, h1 = z2, z3, z4
-        if switch[2] and d1 >= p1 and d2 < 0 and h1 >= p1  and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'B', "NS1", h1
-        if switch[3] and d1 <= - p1  and d2 > 0 and h1 <= - p1  and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'S', "NS1", h1
-        # Type2 - should be closed
-        d1, d2, h1 = z1 + z2, z3, z4
-        if switch[4] and d1 >= p2 and d2 < 0 and h1 >= p3 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'B', "NS2", h1
-        if switch[5] and d1 <= -p2 and d2 > 0 and h1 <= -p3 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'S', "NS2", h1
-        # Type3
-        d1, d2, h1 = z1, z2 + z3, z4
-        # if d1 >= p4 and d2 < 0 and h1 >= p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-        #     return 'B', "NS3", h1
-        # if d1 <= -p4 and d2 > 0 and h1 <= -p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-        #     return 'S', "NS3", h1
-        if switch[6] and d1 >= p4 and d2 < 0 and h1 >= p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'B', "NS3", h1
-        if switch[7] and d1 <= -p5 and d2 > 0 and h1 <= -p4 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
-            return 'S', "NS3", h1
-
         else:
             return None, None, 0
 
@@ -227,51 +92,30 @@ class Strategy():
                    3. abs(d2) <= 1 / 2 * d1
                    4. h1 >= 2 * abs(d2)
 
-        Type 2 condition: (Assume Open Long)
-                   1. x1 = 2, x2 = x3 = 1
-                   2. d1 >= 6, h1 >= 3, d2 < 0
-                   3. abs(d2) <= 1 / 2 * d1
-                   4. h1 >= 2 * abs(d2)
-
         :return: (str, str, int). first str: 1 for open long, -1 for open short, 0 for no signal;
                 second str: signal type; int: h2
         '''
-        p1 = self.P_CON_1
-        p2 = self.P_CON_2
-        p3 = self.P_CON_3
-        p4 = self.P_CON_4
-        p5 = self.P_CON_5
-        switch = self.switch
 
         z1, z2, z3, z4 = ls
         # Type 1
         d1, d2, h1 = z2, z3, z4
-        if switch[8] and d1 >= p1 and d2 >= 0 and h1 >= p1 and abs(h1) >= abs(d2) + 2:
+        if d1 >= 2 and d2 >= 0 and h1 >= 2 and abs(h1) >= abs(d2) + 2:
             return 'B', "CON1", h1
-        if switch[9] and d1 <= -p1 and d2 <= 0  and h1 <= -p1 and abs(h1) >= abs(d2) + 2:
+        if d1 <= -2 and d2 <= 0  and h1 <= -2 and abs(h1) >= abs(d2) + 2:
             return 'S', "CON1", h1
-        # Type2
-        d1, d2, h1 = z1 + z2, z3, z4
-        if switch[10] and d1 >= p2 and d2 >= 0  and h1 >= p3 and abs(h1) >= abs(d2) + 2:
-            return 'B', "CON2", h1
-        if switch[11] and d1 <= -p2 and d2 <= 0 and h1 <= -p3 and abs(h1) >= abs(d2) + 2:
-            return 'S', "CON2", h1
-        # Type3
-        d1, d2, h1 = z1, z2 + z3, z4
-        if switch[12] and d1 >= p4 and d2 >= 0  and h1 >= p5 and abs(h1) >= abs(d2) + 2:
-            return 'B', "CON3", h1
-        if switch[13] and d1 <= -p4 and d2 <= 0 and h1 <= -p5 and abs(h1) >= abs(d2) + 2:
-            return 'S', "CON3", h1
-
-
         else:
             return None, None, 0
 
     def initDailyParam(self, pos_type="all", date=None) -> None:
         if pos_type == "all":
             self.date = date
-            df = self.get_oneday_data(self.date)
+            df = self.all_data[self.all_data["date"] == date].copy()
+            if df.shape[0] < 14400:
+                raise ValueError("Data is not complete or data is missing on " + date)
             df.sort_values(by="time", inplace=True)
+            self.xtick = list(range(0, 14401, 1800))
+            self.xticklabel = ["9:30", "10:00", "10:30", "11:00", "11:30/1:00", "1:30", "2:00", "2:30", "3:00"]
+            self.xM = list(range(14400))[:: 30]
             self.yM = df["price"].tolist()[:: 30]
             self.xMl = self.xM[1:]  # x minute list without first nan i.e. start @ 9:31
             self.yMl = self.yM[1:]  # price minute list without first nan i.e. start @ 9:31
@@ -373,8 +217,6 @@ class Strategy():
             sig_type = self.long_sig_type
             reach_6 = self.long_reach_6
             start_shift_1 = self.yMl[self.long_start_pos - 1]
-            start_shift_2 = self.yMl[self.long_start_pos - 2]
-            start_shift_3 = self.yMl[self.long_start_pos - 3]
             time_pass = n - self.long_start_pos
             h1 = self.long_h1
             sign = 1
@@ -384,78 +226,81 @@ class Strategy():
             sig_type = self.short_sig_type
             reach_6 = self.short_reach_6
             start_shift_1 = self.yMl[self.short_start_pos - 1]
-            start_shift_2 = self.yMl[self.short_start_pos - 2]
-            start_shift_3 = self.yMl[self.short_start_pos - 3]
             time_pass = n - self.short_start_pos
             h1 = self.short_h1
             sign = -1
         H1 = round(1000 * (point - start))
         trigger_price = start
 
-
-        w1 = self.P_W_1
-        w2 = self.P_W_2
-        l1 = self.P_L_1
-        l2 = self.P_L_2
-        l3 = self.P_L_3
-        h1w = self.P_h1_W
-        adjust = self.P_R_ADJ
-
         if  not reach_6 and sig_type == "RAP":
-            if time_pass <= 2:
+            if time_pass <= 4:
                 trigger_price = start - 0.006 * sign
             else:
-                trigger_price = start + 0.001 * adjust * sign
+                trigger_price = start
         elif not reach_6:
             if abs(h1) > 8:
                 trigger_price = start - 2 / 3 * h1 / 1000 * sign
-            elif sig_type == "NS1":
-                trigger_price = start_shift_2
-            elif sig_type == "NS2" or sig_type == "NS3":
-                trigger_price = start_shift_3
             elif sig_type == "CON1" or sig_type == "CON2" or sig_type == "CON3":
                 trigger_price = start_shift_1
         else:
-            if abs(H1) <= l1:
-                trigger_price = start + w1 * (H1 + h1w * h1) / 1000
-            elif abs(H1) <= l2:
-                trigger_price = start + w2 *  (H1 + h1w * h1)  / 1000 - 0.001 * sign
+            if abs(H1) <= 15:
+                trigger_price = start + 0.6 * H1 / 1000
+            elif abs(H1) <= 30:
+                trigger_price = start + 0.8 * H1  / 1000 - 0.001 * sign
             else:
-                trigger_price = point - 0.001 * l3 * sign
+                trigger_price = point - 0.001 * 12 * sign
 
         return round(trigger_price, 3)
 
     def plotSignal(self, ax: plt, n: int, xpos: int, ypos: float, sig: str, sig_type: str) -> None:
-        if sig_type == "NS1":
-            color = "deepskyblue"
+        if sig_type == "CON1":
             shift = 3
-        elif sig_type == "NS2":
-            color = "deepskyblue"
-            shift = 4
-        elif sig_type == "NS3":
-            color = "deepskyblue"
-            shift = 4
-        elif sig_type == "CON1":
-            color = "goldenrod"
-            shift = 3
-        elif sig_type == "CON2":
-            color = "goldenrod"
-            shift = 4
         elif sig_type == "CON3":
-            color = "goldenrod"
             shift = 4
         elif sig_type == "RAP":
-            color = "violet"
             shift = 2
         else:
             raise ValueError("Wrong sig_type:" + sig_type)
-        color = "gray"
-        ax.plot(self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], color=color,linewidth=1)
-        # ax.text(xpos - 30, ypos - 0.004, sig, fontsize=12, color=color, fontweight="bold")
-        ax.text(xpos - 120, ypos - 0.03, sig_type, fontsize=6, color=color, fontweight="bold")
+        ax.plot(self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], color="gray",linewidth=1)
+        ax.text(xpos - 120, ypos - 0.03, sig_type, fontsize=6, color="gray", fontweight="bold")
+
+    def checkCloseSignal(self, ax: plt, n: int, xpos: int, ypos: float, delta: int) -> (bool, int):
+        if n > 236* 2 :
+            if self.long_num > 0:
+                self.closeLongPosition(ax, n, xpos, ypos, 1)
+            if self.short_num > 0:
+                self.closeShortPosition(ax, n, xpos, ypos, 1)
+            return
+
+        # check close long part
+        if self.long_num > 0:
+            if delta > 0:
+                if round(1000 * (ypos - self.long_start_price)) >= 6:
+                    self.long_reach_6 = True
+                if ypos > self.long_peak_price:
+                    self.long_peak_pos = n
+                    self.long_peak_price = ypos
+            else:
+                trigger_price = self.calTriggerPrice(pos_type="long", n=n)
+                if ypos < trigger_price:
+                    self.closeLongPosition(ax, n, xpos, ypos, 1)
+
+        # Close short part
+        if self.short_num > 0:
+            if delta < 0:
+                if round(1000 * (ypos - self.short_start_price)) <= -6:
+                    self.short_reach_6 = True
+                if ypos < self.short_nadir_price:
+                    self.short_nadir_pos = n
+                    self.short_nadir_price = ypos
+            else:
+                trigger_price = self.calTriggerPrice(pos_type="short", n=n)
+                if ypos > round(trigger_price, 3):
+                    self.closeShortPosition(ax, n, xpos, ypos, 1)
+
 
     def checkCloseLongSignal(self, n: int, ypos: float, delta: int) -> (bool, int):
-        if n > 236 * 2:
+        if n > 236:
             return True, 1
         if delta > 0:
             if round(1000 * (ypos - self.long_start_price)) >= 6:
@@ -473,7 +318,7 @@ class Strategy():
             return False, -1
 
     def checkCloseShortSignal(self, n: int, ypos: float, delta: int) -> (bool, int):
-        if n > 236 * 2:
+        if n > 236:
             return True, 1
         if delta < 0:
             if round(1000 * (ypos - self.short_start_price)) <= -6:
@@ -498,9 +343,6 @@ class Strategy():
             sig, sig_type, h1 = self.getContinuousOS(self.slope_list[n - 3: n + 1])
             if sig:
                 return sig, sig_type, h1
-            sig, sig_type, h1 = self.getNStyleOS(self.slope_list[n - 3: n + 1])
-            if sig:
-                return sig, sig_type, h1
 
         return None, None, 0
 
@@ -517,6 +359,8 @@ class Strategy():
             fig, ax = self.initPlot()
         for n, xpos, ypos, delta in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
             # Check close signal when we have positions
+            # if self.long_num > 0:
+            #     self.checkCloseSignal(ax, n, xpos, ypos, delta)
             if self.long_num > 0:
                 sig, close_type = self.checkCloseLongSignal(n, ypos, delta)
                 if sig is True:
@@ -577,111 +421,15 @@ class Strategy():
                 self.stat.to_csv("calibration/stat_"+ name + '_' + str(mean) + ".csv")
         return self.stat
 
-    def calibrate(self) -> None:
-        # # NS1
-        # for x in range(2, 5):
-        #     self.multi_backtest(x, 0, 0)
-        #     obj.printStat("P_NS_1_is_" +  str(x))
-        # # NS2
-        # for (x, y) in zip([4, 5, 6, 4, 5, 6], [3, 3, 3, 4, 4, 4]):
-        #     self.multi_backtest(x, y, 0)
-        #     obj.printStat("P_NS_2_is_" +  str(x) + "_P_NS_3_is_" + str(y))
-        # #NS3
-        # for (x, y) in zip([2, 3, 3, 4, 4], [3, 3, 4, 3, 4]):
-        #     self.multi_backtest(x, y, 0)
-        #     obj.printStat("P_NS_4_is_" +  str(x) + "_P_NS_5_is_" + str(y))
-        # # CON1
-        # for x in [2, 3, 4]:
-        #     self.multi_backtest(x, 0, 0)
-        #     obj.printStat("P_CON_1_is_" +  str(x))
-        # # CON2
-        # for (x, y) in zip([4, 5, 6, 4, 5, 6], [3, 3, 3, 4, 4, 4]):
-        #     self.multi_backtest(x, y, 0)
-        #     obj.printStat("P_CON_2_is_" +  str(x) + "_P_CON_3_is_" + str(y))
-        # #CON3
-        # for (x, y) in zip([2, 3, 3, 4, 4], [3, 3, 4, 3, 4]):
-        #     self.multi_backtest(x, y, 0)
-        #     obj.printStat("P_CON_4_is_" +  str(x) + "_P_CON_5_is_" + str(y))
-        # #RAPB
-        # for x in range(6, 13):
-        #     self.multi_backtest(x, 0, 0)
-        #     obj.printStat("P_RAPB_1_is_" +  str(x))
-        # #RAPS
-        # for x in range(4, 6):
-        #     self.multi_backtest(x, 0, 0)
-        #     obj.printStat("P_RAPS_1_is_" +  str(x))
-        # self.defaultParam()
-        # self.P_RAPB_1 = 9
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPB_1_is_9")
-        # self.defaultParam()
-        # self.P_RAPB_1 = 10
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPB_1_is_10")
-        # self.defaultParam()
-        # self.P_RAPB_1 = 11
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPB_1_is_11")
-        # self.defaultParam()
-        # self.P_RAPB_1 = 13
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPB_1_is_13")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 7
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_7")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 8
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_8")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 9
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_9")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 10
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_10")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 11
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_11")
-        # self.defaultParam()
-        # self.P_RAPS_1 = 13
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_RAPS_1_is_13")
 
-
-
-        ################ Hyper Parameters #######################
-        # self.defaultParam()
-        # self.P_R_ADJ = 2
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_R_ADJ_is_2")
-        # self.defaultParam()
-        # self.P_L_3 = 8
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_L3_is_8")
-        # self.defaultParam()
-        # self.P_L_3 = 10
-        # self.multi_backtest(plot=False)
-        # obj.printStat("P_L3_is_10")
-
-
-        # for (P_W_1, P_W_2) in zip([0.55, 0.55, 0.6, 0.6, 0.7, 0.7, 0.75, 0.75], [0.7, 0.75, 0.75, 0.8, 0.85, 0.8, 0.85]):
-        #     self.multi_backtest(P_W_1, P_W_2, 1)
-        #     obj.printStat("X_" + str(P_W_1) + "Y_" + str(P_W_2))
-        pass
-
-
-    def multi_backtest(self, x, y, z, process_num=10):
+    def multi_backtest(self,  process_num=10, plot=False):
         n = process_num
         df = pd.DataFrame()
         q = Queue()
         jobs = list()
         for i in range(0, n):
-            name = "data_slice/data_slice_" + str(i) + ".csv"
-            p = Process(target=backtest_slice, args = (q, name, i, x, y, z, ))
+            backtest_data = "data_slice/data_slice_" + str(i) + ".csv"
+            p = Process(target=backtest_slice, args = (q, backtest_data, plot))
             jobs.append(p)
             p.start()
             print("Start process", i)
@@ -690,7 +438,6 @@ class Strategy():
         for job in jobs:
             job.join()
         self.stat_df = df
-
 
     def slice(self, process_num=10):
         n = process_num
@@ -705,6 +452,20 @@ class Strategy():
             data_slice.to_csv("data_slice/data_slice_" + str(i) + ".csv", index=False)
         print("Slice data into", str(n), "part.")
 
+    def getCurrentPrice(self):
+        data = TsTickData().ticks()
+        print(data)
+        time.sleep(0.5)
+
+    def timer(self):
+        while True:
+            now = dt.datetime.now()
+            if now.microsecond < 999:
+                print(now)
+                self.getCurrentPrice()
+                time.sleep(0.3)
+
+
 
 
 
@@ -713,10 +474,8 @@ class Strategy():
 
 
 if __name__ == "__main__":
-    obj = Strategy(1, 1, 1, fake=True)
-    # obj.calibrate()
-    obj.multi_backtest(0,0,0)
+    obj = Strategy()
+    obj.multi_backtest(plot=True)
     obj.printStat()
-
 
 
