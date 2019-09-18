@@ -322,10 +322,6 @@ class Strategy():
         return price
 
 
-    def start(self, event):
-        th1 = Thread(target=self.updateData)
-        th1.start()
-
     def updateData(self):
         date = str(dt.datetime.now().date())
 
@@ -349,12 +345,6 @@ class Strategy():
         self.short_nadir_price = None
         self.short_h1 = 0
         self.short_reach_6 = False
-
-    #     th = Thread(target=self.updateData, args=(l, ))
-    #     th.start()
-    #     plt.show()
-    #
-    # def updateData(self, l):
         price = 5.550
         date = str(dt.datetime.now().date())
         df = pd.DataFrame(columns=["time","price"])
@@ -443,19 +433,16 @@ class Strategy():
                 time.sleep(5)
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
-
-        i = 0
         while True:
-            line_list = list()
-            if i > 0:
-                self.ax.lines.remove(lines[0])
-                self.ax.texts.remove(texts)
-            lines = self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
-            line_list.append(lines)
-            i += 1
+            self.ax.lines = list()
+            self.ax.texts = list()
+            self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
             for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
-                texts = self.ax.text(xpos + 1, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
-            plt.pause(5)
+                self.ax.text(xpos - 1, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
+            for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
+                self.ax.plot(x_slice, y_slice, color="gold", linewidth=1)
+                self.ax.text(x_point, y_point - 0.002, sig_type, fontsize=6, color="gold", fontweight="bold")
+            plt.pause(25)
 
 
 if __name__ == "__main__":
