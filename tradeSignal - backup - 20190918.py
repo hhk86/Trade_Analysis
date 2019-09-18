@@ -11,9 +11,6 @@ if __name__ == "__main__":
     import os
     sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
     import TSLPy3 as ts
-    import random
-    from threading import Thread
-    from matplotlib.widgets import Button
 
 
 
@@ -214,17 +211,17 @@ class Strategy():
                     self.closePosition("short", xpos, ypos, '*k')
 
     def checkOpenSignal(self,  n: int, xpos: int, ypos: float) -> (str, str):
-        if n >= 3 and n <= 234 * 2:
+        if n >= 4 and n <= 234 * 2:
             if self.long_num < 1:
-                if sum(self.slope_list[n - 1 : n + 1]) >= 4: # RAPB   9
+                if sum(self.slope_list[n - 1 : n + 1]) >= 9: # RAPB
                     self.openPosition('B', "RAP", n, xpos, ypos, sum(self.slope_list[n - 1: n + 1]))
                 else:
                     d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                    if d1 >= 1 and d2 >= 0 and h1 >= 1 and abs(h1) >= abs(d2) + 2: # CON1B   2, 2
+                    if d1 >= 2 and d2 >= 0 and h1 >= 2 and abs(h1) >= abs(d2) + 2: # CON1B
                         self.openPosition('B', "CON1", n, xpos, ypos, self.slope_list[n])
             if self.short_num < 1:
                 d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                if d1 <= -1 and d2 <= 0 and h1 <= -1 and abs(h1) >= abs(d2) + 2: # CON1S     2, 2
+                if d1 <= -2 and d2 <= 0 and h1 <= -2 and abs(h1) >= abs(d2) + 2: # CON1S
                     self.openPosition('S', "CON1", n, xpos, ypos, self.slope_list[n])
 
     def openPosition(self, direction: str, sig_type: str, n: int, xpos: int, ypos:float, h1):
@@ -244,9 +241,10 @@ class Strategy():
             self.short_nadir_pos = n
             self.short_nadir_price = ypos
             self.short_h1 = h1
-        shift = 3 if sig_type == "CON1" else 2
-        self.signal_list.append((self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], xpos, ypos, sig_type))
-
+        if self.plot is True:
+            shift = 3 if sig_type == "CON1" else 2
+            self.ax.plot(self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], color="gray",linewidth=1)
+            self.ax.text(xpos - 120, ypos - 0.03, sig_type, fontsize=6, color="gray", fontweight="bold")
 
     def backtest(self, plot=True) -> None:
         self.plot = plot
@@ -318,154 +316,27 @@ class Strategy():
         print("Process end")
 
     def getCurrentPrice(self):
-        price = TsTickData().ticks()
-        return price
+        data = TsTickData().ticks()
+        print(data)
+        time.sleep(0.5)
 
-
-    def start(self, event):
-        th1 = Thread(target=self.updateData)
-        th1.start()
-
-    def updateData(self):
-        date = str(dt.datetime.now().date())
-
-        self.plot = True
-        self.signal_list = list()
-        self.date = date
-        self.pnl = 0
-        self.long_num = 0
-        self.long_sig_type = None
-        self.long_start_pos = None
-        self.long_start_price = None
-        self.long_peak_pos = None
-        self.long_peak_price = None
-        self.long_h1 = 0
-        self.long_reach_6 = False
-        self.short_num = 0
-        self.short_sig_type = None
-        self.short_start_pos = None
-        self.short_start_price = None
-        self.short_nadir_pos = None
-        self.short_nadir_price = None
-        self.short_h1 = 0
-        self.short_reach_6 = False
-
-    #     th = Thread(target=self.updateData, args=(l, ))
-    #     th.start()
-    #     plt.show()
-    #
-    # def updateData(self, l):
-        price = 5.550
-        date = str(dt.datetime.now().date())
-        df = pd.DataFrame(columns=["time","price"])
-        try:
-            os.remove("log/" + date + ".csv")
-        except:
-            pass
-        print("Create new a log file.")
+    def timer(self):
         while True:
             now = dt.datetime.now()
             if now.microsecond < 999:
-                t = dt.datetime.strftime(now, "%H:%M:%S")
-                # price = self.getCurrentPrice()
-                change = random.randint(-8, 4)
-                if abs(change) < 4:
-                    price += change * 0.001
-                    price = round(price, 3)
-                df = df.append(pd.DataFrame([[t, price],], columns=["time","price"]))
-                df.index = range(df.shape[0])
-                if dt.datetime.now().second == 0:
-                    df.to_csv("log/" + date + ".csv", index=False)
-                self.xM = list(df[df["time"].apply(lambda s: s.endswith("0"))].index)
-                if len(self.xM) < 2:
-                    continue
-                self.yM = df[df["time"].apply(lambda s: s.endswith("0"))]["price"].tolist()
-                self.xMl = self.xM[1:]
-                self.yMl = self.yM[1:]
-                self.Nl = list(range(len(self.xMl)))
-                self.slope_list = [int(round(1000 * z)) for z in np.diff(self.yM)]
-                self.y_min = df["price"].min()
-                self.y_max = df["price"].max()
-                self.y_mid = 0.5 * (self.y_min + self.y_max)
-                if t.endswith("0"):
-                    print(self.xM, self.yM)
-                    # l.set_xdata(self.xM)
-                    # l.set_ydata(self.yM)
-                    # ax.set_xticks(list(range(0, 100)))
-                    # plt.draw()
-                    # plt.title(self.date, size=15)
-
-                    # th = Thread(target=self.rePlot)
-                    # th.start()
-                    # self.ax.plot(self.xM, self.yM)
-                    # self.ax.set_xticks(self.xM)
-                    # th = Thread(target=self.rePlot)
-                    # th.start()
-                    # try:
-                    #     # self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
-                    #     self.l.set_xdata(self.xM)
-                    #     self.l.set_ydata(self.yM)
-                    # except ValueError as e:
-                    #     print(df)
-                    #     df.to_csv("debug.csv")
-                    #     raise e
-                    # self.ax.plot(self.xM, self.yM, ".", color="black", markersize=4)
-                    # for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
-                    #     self.ax.text(xpos, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
-                    # if self.y_max - self.y_min <= 0.1:
-                    #     self.ax.set_ylim(self.y_mid - 0.04, self.y_mid + 0.04)
-
-
-                    # check open signal
-                    n = len(self.xMl) - 1
-                    print(self.xMl, self.yMl)
-                    print(self.slope_list, n)
-                    xpos = self.xMl[-1]
-                    ypos = self.yMl[-1]
-                    self.checkOpenSignal(n, xpos, ypos)
-                    # if self.plot is True:
-                    #     for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
-                    #         shift = 3 if sig_type == "CON1" else 2
-                    #         self.ax.plot(x_slice, y_slice, color="gold", linewidth=1)
-                    #         self.ax.text(x_point, y_point - 0.015, sig_type, fontsize=6, color="gold", fontweight="bold")
+                print(now)
+                self.getCurrentPrice()
+                time.sleep(0.3)
 
 
 
-                    # plt.savefig("debug.png" )
-                    # plt.close()
 
-    def rePlot(self):
-        while True:
-            try:
-                _ = self.xMl
-                break
-            except:
-                time.sleep(5)
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(1, 1, 1)
-
-        i = 0
-        while True:
-            line_list = list()
-            if i > 0:
-                self.ax.lines.remove(lines[0])
-                self.ax.texts.remove(texts)
-            lines = self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
-            line_list.append(lines)
-            i += 1
-            for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
-                texts = self.ax.text(xpos + 1, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
-            plt.pause(5)
 
 
 if __name__ == "__main__":
-
-    obj = Strategy()
-    th3 =Thread(target=obj.rePlot)
-    th3.start()
-    th4 = Thread(target=obj.updateData)
-    th4.start()
-
+    obj=Strategy()
+    obj.multi_backtest(plot=True)
+    obj.printStat()
 
 
 
