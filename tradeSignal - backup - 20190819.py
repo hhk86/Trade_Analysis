@@ -111,19 +111,17 @@ class Strategy():
             self.short_h1 = 0
             self.short_reach_6 = False
 
-    def closePosition(self, close_type: str, xpos: int, ypos: float):
+    def closePosition(self, close_type: str, xpos: int, ypos: float, marker: str):
         start_price = self.long_start_price if close_type == "long" else self.short_start_price
         pos = self.long_start_pos if close_type == "long" else self.short_start_pos
-        x = self.xMl[pos]
-        self.close_list.append((xpos, ypos, close_type, x, start_price))
-        # if self.plot is True:
-        #     self.ax.plot([xpos, ], [ypos, ], marker, markersize=5)
-        #     if ypos != start_price:
-        #         color = "red" if ypos > start_price else "blue"
-        #         x = self.xMl[pos]
-        #         self.ax.plot([x, x + 0.0001], [start_price, ypos], color=color, linewidth =1)
+        if self.plot is True:
+            self.ax.plot([xpos, ], [ypos, ], marker, markersize=5)
+            if ypos != start_price:
+                color = "red" if ypos > start_price else "blue"
+                x = self.xMl[pos]
+                self.ax.plot([x, x + 0.0001], [start_price, ypos], color=color, linewidth =1)
         self.pnl += ypos - start_price
-        # self.update_stat_df(pos_type=close_type, close_price=ypos)
+        self.update_stat_df(pos_type=close_type, close_price=ypos)
         self.initDailyParam(pos_type=close_type)
 
     def update_stat_df(self, pos_type: str, close_price: float) -> None:
@@ -183,6 +181,13 @@ class Strategy():
         return round(trigger_price, 3)
 
     def checkCloseSignal(self, n: int, xpos: int, ypos: float, delta: int) -> (bool, int):
+        if n > 236* 2 :
+            if self.long_num > 0:
+                self.closePosition("long", xpos, ypos, 'xk')
+            if self.short_num > 0:
+                self.closePosition("short", xpos, ypos, 'xk')
+            return
+
         # check close long part
         if self.long_num > 0:
             if delta > 0:
@@ -194,7 +199,7 @@ class Strategy():
             else:
                 trigger_price = self.calTriggerPrice(pos_type="long", n=n)
                 if ypos < trigger_price:
-                    self.closePosition("long", xpos, ypos)
+                    self.closePosition("long", xpos, ypos, '*k')
 
         # Close short part
         if self.short_num > 0:
@@ -207,7 +212,7 @@ class Strategy():
             else:
                 trigger_price = self.calTriggerPrice(pos_type="short", n=n)
                 if ypos > round(trigger_price, 3):
-                    self.closePosition("short", xpos, ypos)
+                    self.closePosition("short", xpos, ypos, '*k')
 
     def checkOpenSignal(self,  n: int, xpos: int, ypos: float) -> (str, str):
         if n >= 3 and n <= 234 * 2:
@@ -324,7 +329,6 @@ class Strategy():
 
         self.plot = True
         self.signal_list = list()
-        self.close_list = list()
         self.date = date
         self.pnl = 0
         self.long_num = 0
@@ -355,11 +359,11 @@ class Strategy():
             now = dt.datetime.now()
             if now.microsecond < 999:
                 t = dt.datetime.strftime(now, "%H:%M:%S")
-                # price = self.getCurrentPrice()
-                change = random.randint(-8, 8)
-                if abs(change) < 4:
-                    price += change * 0.001
-                    price = round(price, 3)
+                price = self.getCurrentPrice()
+                # change = random.randint(-8, 4)
+                # if abs(change) < 4:
+                #     price += change * 0.001
+                #     price = round(price, 3)
                 df = df.append(pd.DataFrame([[t, price],], columns=["time","price"]))
                 df.index = range(df.shape[0])
                 if dt.datetime.now().second == 0:
@@ -382,16 +386,50 @@ class Strategy():
                 self.y_mid = 0.5 * (self.y_min + self.y_max)
                 if t.endswith("0"):
                     print(self.xM, self.yM)
+                    # l.set_xdata(self.xM)
+                    # l.set_ydata(self.yM)
+                    # ax.set_xticks(list(range(0, 100)))
+                    # plt.draw()
+                    # plt.title(self.date, size=15)
+
+                    # th = Thread(target=self.rePlot)
+                    # th.start()
+                    # self.ax.plot(self.xM, self.yM)
+                    # self.ax.set_xticks(self.xM)
+                    # th = Thread(target=self.rePlot)
+                    # th.start()
+                    # try:
+                    #     # self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
+                    #     self.l.set_xdata(self.xM)
+                    #     self.l.set_ydata(self.yM)
+                    # except ValueError as e:
+                    #     print(df)
+                    #     df.to_csv("debug.csv")
+                    #     raise e
+                    # self.ax.plot(self.xM, self.yM, ".", color="black", markersize=4)
+                    # for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
+                    #     self.ax.text(xpos, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
+                    # if self.y_max - self.y_min <= 0.1:
+                    #     self.ax.set_ylim(self.y_mid - 0.04, self.y_mid + 0.04)
+
+
                     # check open signal
                     n = len(self.xMl) - 1
                     print(self.xMl, self.yMl)
                     print(self.slope_list, n)
                     xpos = self.xMl[-1]
                     ypos = self.yMl[-1]
-                    delta = self.slope_list[-1]
                     self.checkOpenSignal(n, xpos, ypos)
-                    self.checkCloseSignal(n, xpos, ypos, delta)
+                    # if self.plot is True:
+                    #     for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
+                    #         shift = 3 if sig_type == "CON1" else 2
+                    #         self.ax.plot(x_slice, y_slice, color="gold", linewidth=1)
+                    #         self.ax.text(x_point, y_point - 0.015, sig_type, fontsize=6, color="gold", fontweight="bold")
 
+
+
+                    # plt.savefig("debug.png" )
+                    # plt.close()
 
     def rePlot(self):
         while True:
@@ -409,20 +447,9 @@ class Strategy():
             for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
                 self.ax.text(xpos - 1, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
             for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
-                self.ax.plot(x_slice, y_slice, color="deepskyblue", linewidth=1)
-                self.ax.text(x_point, y_point - 0.002, sig_type, fontsize=6, color="deepskyblue", fontweight="bold")
-            for xpos, ypos, close_type, x, start_price in self.close_list:
-                self.ax.plot([xpos, ], [ypos, ], "*k", markersize=5)
-                if ypos != start_price:
-                    if close_type == "long":
-                        color = "red" if ypos > start_price else "green"
-                        self.ax.plot([x, x + 0.0001], [start_price, ypos], color=color, linewidth =1)
-                    else:
-                        color = "red" if ypos < start_price else "green"
-                        self.ax.plot([x, x + 0.001], [start_price, 2 * start_price - ypos],
-                                color=color, linewidth=1)
-            plt.title(str(round(self.pnl, 3)))
-            plt.pause(5)
+                self.ax.plot(x_slice, y_slice, color="gold", linewidth=1)
+                self.ax.text(x_point, y_point - 0.002, sig_type, fontsize=6, color="gold", fontweight="bold")
+            plt.pause(25)
 
 
 if __name__ == "__main__":
