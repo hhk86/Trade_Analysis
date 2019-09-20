@@ -6,8 +6,10 @@ import math
 import sys
 sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
 import TSLPy3 as ts
-import win32api
-import win32con
+from colorama import init
+init(strip=not sys.stdout.isatty()) # strip colors if stdout is redirected
+from termcolor import cprint
+from pyfiglet import figlet_format
 
 if __name__ == "__main__":
     from multiprocessing import Process, Queue
@@ -67,6 +69,7 @@ class Strategy():
             self.date = str(dt.datetime.now().date())
             self.pnl = 0
             self.refresh = True
+
 
         if pos_type == "long" or pos_type == "all":
             self.long_num = 0
@@ -169,7 +172,6 @@ class Strategy():
         msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + close_type + " position @ " + str(
             xpos) + " with price: " + str(ypos)
         Thread(target=self.message, args=(msg,)).start()
-        print(msg)
         if close_type == "long":
             self.pnl += ypos - start_price
         else:
@@ -202,7 +204,6 @@ class Strategy():
             msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
                 xpos) + " with price: " + str(ypos)
             Thread(target=self.message, args=(msg,)).start()
-            print(msg)
         elif direction == 'S':
             self.short_num += 1
             self.short_sig_type = sig_type
@@ -214,7 +215,6 @@ class Strategy():
             msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
                 xpos) + " with price: " + str(ypos)
             Thread(target=self.message, args=(msg,)).start()
-            print(msg)
         shift = 3 if sig_type == "CON1" else 2
         self.signal_list.append((self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], xpos, ypos, sig_type))
 
@@ -339,7 +339,9 @@ class Strategy():
 
 
     def message(self, msg):
-        win32api.MessageBox(0, msg, "Signal", win32con.MB_OK, win32con.MB_SYSTEMMODAL)
+        print(msg)
+        cprint(figlet_format('signal!', font='starwars'), 'green', 'on_red', attrs=['bold'])
+        print('\n' * 2)
 
 
 
