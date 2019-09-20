@@ -21,18 +21,18 @@ class TsTickData(object):
 
     def __enter__(self):
         if ts.Logined() is False:
-            # print('天软未登陆或客户端未打开，将执行登陆操作')
+            print('天软未登陆或客户端未打开，将执行登陆操作')
             self.__tsLogin()
             return self
 
     def __tsLogin(self):
         ts.ConnectServer("tsl.tinysoft.com.cn", 443)
         dl = ts.LoginServer("fzzqjyb", "fz123456")
-        # print('天软登陆成功')
+        print('天软登陆成功')
 
     def __exit__(self, *arg):
         ts.Disconnect()
-        # print('天软连接断开')
+        print('天软连接断开')
 
 
 
@@ -174,15 +174,15 @@ class Strategy():
     def checkOpenSignal(self,  n: int, xpos: int, ypos: float) -> (str, str):
         if n >= 3 and n <= 234 * 2:
             if self.long_num < 1:
-                if sum(self.slope_list[n - 1 : n + 1]) >= 9: # RAPB   4
+                if sum(self.slope_list[n - 1 : n + 1]) >= 4: # RAPB   9
                     self.openPosition('B', "RAP", n, xpos, ypos, sum(self.slope_list[n - 1: n + 1]))
                 else:
                     d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                    if d1 >= 2 and d2 >= 0 and h1 >= 2 and abs(h1) >= abs(d2) + 2: # CON1B   1, 1
+                    if d1 >= 1 and d2 >= 0 and h1 >= 1 and abs(h1) >= abs(d2) + 2: # CON1B   2, 2
                         self.openPosition('B', "CON1", n, xpos, ypos, self.slope_list[n])
             if self.short_num < 1:
                 d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                if d1 <= -2 and d2 <= 0 and h1 <= -2 and abs(h1) >= abs(d2) + 2: # CON1S     1, 1
+                if d1 <= -1 and d2 <= 0 and h1 <= -1 and abs(h1) >= abs(d2) + 2: # CON1S     2, 2
                     self.openPosition('S', "CON1", n, xpos, ypos, self.slope_list[n])
 
     def openPosition(self, direction: str, sig_type: str, n: int, xpos: int, ypos:float, h1):
@@ -240,10 +240,10 @@ class Strategy():
                 df.index = range(df.shape[0])
                 if dt.datetime.now().second == 0:
                     df.to_csv("log/" + date + ".csv", index=False)
-                self.xM = list(df[df["time"].apply(lambda s: s.endswith("30") or s.endswith("00"))].index)
+                self.xM = list(df[df["time"].apply(lambda s: s.endswith("0"))].index)
                 if len(self.xM) < 2:
                     continue
-                self.yM = df[df["time"].apply(lambda s: s.endswith("30") or s.endswith("00"))]["price"].tolist()
+                self.yM = df[df["time"].apply(lambda s: s.endswith("0"))]["price"].tolist()
                 self.xMl = self.xM[1:]
                 self.yMl = self.yM[1:]
                 self.Nl = list(range(len(self.xMl)))
@@ -269,8 +269,6 @@ class Strategy():
         self.refresh = not self.refresh
         if self.refresh:
             print("Resume refreshing")
-            plt.close()
-            self.draw()
         else:
             print("Stop refreshing")
 
@@ -314,14 +312,14 @@ class Strategy():
                 if self.short_trigger_price is not None:
                     self.ax.plot(self.xM, [self.short_trigger_price, ] * len(self.xM), "--g", linewidth=0.5)
                 self.ax.set_title(str(round(self.pnl, 3)))
-                plt.pause(30)
+                plt.pause(10)
             else:
-                plt.pause(120)
+                plt.pause(60)
 
 
 
 if __name__ == "__main__":
-    obj = Strategy(mode="real")
+    obj = Strategy(mode="history")
 
 
 
