@@ -222,6 +222,7 @@ class Strategy():
         with TsTickData() as tslobj:
             return tslobj.ticks()
 
+
     def start(self):
         self.initDailyParam("all")
         if self.mode == "mock":
@@ -280,6 +281,8 @@ class Strategy():
                 self.checkCloseSignal(n, xpos, ypos, delta)
                 self.checkOpenSignal(n, xpos, ypos)
 
+
+
     def refresh_func(self, event):
         self.refresh = not self.refresh
         if self.refresh:
@@ -288,6 +291,7 @@ class Strategy():
             self.draw()
         else:
             print("Stop refreshing")
+
 
     def draw(self):
         while True:
@@ -332,6 +336,7 @@ class Strategy():
                 plt.pause(5)
             else:
                 plt.pause(100000)
+
 
     def message(self, msg):
         print(msg)
