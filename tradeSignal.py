@@ -3,11 +3,11 @@ import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plt
 import math
-from tkinter import messagebox
-from tkinter import Tk
 import sys
 sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
 import TSLPy3 as ts
+import win32api
+import win32con
 
 if __name__ == "__main__":
     from multiprocessing import Process, Queue
@@ -166,8 +166,10 @@ class Strategy():
         x = self.xMl[pos]
         self.close_list.append((xpos, ypos, close_type, x, start_price))
         # Thread(target=self.message, args=("close", xpos, ypos, close_type)).start()
-        print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + close_type + " position @ " + str(
-            xpos) + " with price: " + str(ypos))
+        msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + close_type + " position @ " + str(
+            xpos) + " with price: " + str(ypos)
+        Thread(target=self.message, args=(msg,)).start()
+        print(msg)
         if close_type == "long":
             self.pnl += ypos - start_price
         else:
@@ -197,9 +199,10 @@ class Strategy():
             self.long_peak_pos = n
             self.long_peak_price = ypos
             self.long_h1 = h1
-            # Thread(target=self.message, args=("open", xpos, ypos, direction)).start()
-            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
-                xpos) + " with price: " + str(ypos))
+            msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
+                xpos) + " with price: " + str(ypos)
+            Thread(target=self.message, args=(msg,)).start()
+            print(msg)
         elif direction == 'S':
             self.short_num += 1
             self.short_sig_type = sig_type
@@ -208,9 +211,10 @@ class Strategy():
             self.short_nadir_pos = n
             self.short_nadir_price = ypos
             self.short_h1 = h1
-            # Thread(target=self.message, args=("open", xpos, ypos, direction)).start()
-            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
-                xpos) + " with price: " + str(ypos))
+            msg = dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
+                xpos) + " with price: " + str(ypos)
+            Thread(target=self.message, args=(msg,)).start()
+            print(msg)
         shift = 3 if sig_type == "CON1" else 2
         self.signal_list.append((self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], xpos, ypos, sig_type))
 
@@ -268,7 +272,7 @@ class Strategy():
                 raise(e)
             self.y_min = df["price"].min()
             self.y_max = df["price"].max()
-            self.y_mid = 0.5 * (self.y_min + self.y_max)
+            self.y_span = self.y_max - self.y_min
             if t.endswith("0"):
                 n = len(self.xMl) - 1
                 xpos = self.xMl[-1]
@@ -308,10 +312,10 @@ class Strategy():
                 self.ax.texts = list()
                 self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
                 for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
-                    self.ax.text(xpos - 1, ypos + 0.0005, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
+                    self.ax.text(xpos - 1, ypos + self.y_span * 0.05, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
                 for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
                     self.ax.plot(x_slice, y_slice, color="steelblue", linewidth=1)
-                    self.ax.text(x_point, self.y_min - 0.002, sig_type, fontsize=5, color="steelblue",
+                    self.ax.text(x_point, self.y_min - 0.1 * self.y_span, sig_type, fontsize=5, color="steelblue",
                                  fontweight="bold")
                 for xpos, ypos, close_type, x, start_price in self.close_list:
                     self.ax.plot([xpos, ], [ypos, ], "*k", markersize=5)
@@ -328,28 +332,19 @@ class Strategy():
                 if self.short_trigger_price is not None:
                     self.ax.plot(self.xM, [self.short_trigger_price, ] * len(self.xM), "--g", linewidth=0.5)
                 self.ax.set_title(str(round(self.pnl, 3)))
+                self.ax.set_ylim(self.y_min - self.y_span * 0.2, self.y_max + self.y_span * 0.1)
                 plt.pause(5)
             else:
-                plt.pause(120)
+                plt.pause(100000)
 
 
-    def message(self, message_type, xpos, ypos, direction):
-        root = Tk()
-        root.withdraw()  # 提示框主窗口隐藏
-        if message_type == "close":
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + direction + " position @ " + str(
-                xpos) + " with price: " + str(ypos))
-        elif message_type == "open" and direction == 'B':
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
-                xpos) + " with price: " + str(ypos))
-        elif message_type == "open" and direction == 'S':
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
-                xpos) + " with price: " + str(ypos))
+    def message(self, msg):
+        win32api.MessageBox(0, msg, "Signal", win32con.MB_OK, win32con.MB_SYSTEMMODAL)
 
 
 
 if __name__ == "__main__":
-    obj = Strategy(mode="real")
+    obj = Strategy(mode="history")
 
 
 
