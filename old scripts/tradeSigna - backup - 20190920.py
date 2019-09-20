@@ -3,8 +3,6 @@ import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plt
 import math
-from tkinter import messagebox
-from tkinter import Tk
 import sys
 sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
 import TSLPy3 as ts
@@ -165,7 +163,6 @@ class Strategy():
         pos = self.long_start_pos if close_type == "long" else self.short_start_pos
         x = self.xMl[pos]
         self.close_list.append((xpos, ypos, close_type, x, start_price))
-        # Thread(target=self.message, args=("close", xpos, ypos, close_type)).start()
         print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + close_type + " position @ " + str(
             xpos) + " with price: " + str(ypos))
         if close_type == "long":
@@ -177,15 +174,15 @@ class Strategy():
     def checkOpenSignal(self,  n: int, xpos: int, ypos: float) -> (str, str):
         if n >= 3 and n <= 234 * 2:
             if self.long_num < 1:
-                if sum(self.slope_list[n - 1 : n + 1]) >= 3: # RAPB   9
+                if sum(self.slope_list[n - 1 : n + 1]) >= 9: # RAPB   4
                     self.openPosition('B', "RAP", n, xpos, ypos, sum(self.slope_list[n - 1: n + 1]))
                 else:
                     d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                    if d1 >= 1 and d2 >= 0 and h1 >= 1 and abs(h1) >= abs(d2) + 2: # CON1B   2, 2
+                    if d1 >= 2 and d2 >= 0 and h1 >= 2 and abs(h1) >= abs(d2) + 2: # CON1B   1, 1
                         self.openPosition('B', "CON1", n, xpos, ypos, self.slope_list[n])
             if self.short_num < 1:
                 d1, d2, h1 = self.slope_list[n - 2: n + 1]
-                if d1 <= -1 and d2 <= 0 and h1 <= -1 and abs(h1) >= abs(d2) + 2: # CON1S     2, 2
+                if d1 <= -2 and d2 <= 0 and h1 <= -2 and abs(h1) >= abs(d2) + 2: # CON1S     1, 1
                     self.openPosition('S', "CON1", n, xpos, ypos, self.slope_list[n])
 
     def openPosition(self, direction: str, sig_type: str, n: int, xpos: int, ypos:float, h1):
@@ -197,8 +194,7 @@ class Strategy():
             self.long_peak_pos = n
             self.long_peak_price = ypos
             self.long_h1 = h1
-            # Thread(target=self.message, args=("open", xpos, ypos, direction)).start()
-            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
+            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + "Open long position @" + str(
                 xpos) + " with price: " + str(ypos))
         elif direction == 'S':
             self.short_num += 1
@@ -208,8 +204,7 @@ class Strategy():
             self.short_nadir_pos = n
             self.short_nadir_price = ypos
             self.short_h1 = h1
-            # Thread(target=self.message, args=("open", xpos, ypos, direction)).start()
-            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
+            print(dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + "Open short position @" + str(
                 xpos) + " with price: " + str(ypos))
         shift = 3 if sig_type == "CON1" else 2
         self.signal_list.append((self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], xpos, ypos, sig_type))
@@ -225,58 +220,49 @@ class Strategy():
             price = 5.550
         date = str(dt.datetime.now().date())
         df = pd.DataFrame(columns=["time","price"])
-
-
         while True:
-            time.sleep(0.9)
             now = dt.datetime.now()
-            # if now.microsecond < 999 and now.second % 2 == 0:
-            t = dt.datetime.strftime(now, "%H:%M:%S")
-            if self.mode == "real":
-                price = self.getCurrentPrice()
-                while price is None:
+            if now.microsecond < 999:
+                t = dt.datetime.strftime(now, "%H:%M:%S")
+                if self.mode == "real":
                     price = self.getCurrentPrice()
-
-
-            elif self.mode == "mock":
-                change = random.randint(-8, 8)
-                if abs(change) < 4:
-                    price += change * 0.001
-                    price = round(price, 3)
-            elif self.mode == "history":
-                price = self.fake_df.iloc[self.fake_count, 3]
-                self.fake_count += 1
-            else:
-                raise ValueError("Wrong mode: " + self.mode)
-            print("\r" + str(now), end = " ")
-            df = df.append(pd.DataFrame([[t, price],], columns=["time","price"]))
-            df.index = range(df.shape[0])
-            if now.second == 0:
-                df.to_csv("log/new_" + date + ".csv", index=False)
-            self.xM = list(df[df["time"].apply(lambda s: s.endswith("0"))].index)
-            if len(self.xM) < 2:
-                continue
-            self.yM = df[df["time"].apply(lambda s: s.endswith("0"))]["price"].tolist()
-            self.xMl = self.xM[1:]
-            self.yMl = self.yM[1:]
-            self.Nl = list(range(len(self.xMl)))
-            try:
-                self.slope_list = [int(round(1000 * z)) for z in np.diff(self.yM)]
-            except ValueError as e:
-                print(self.xM)
-                print(self.yM)
-                raise(e)
-            self.y_min = df["price"].min()
-            self.y_max = df["price"].max()
-            self.y_mid = 0.5 * (self.y_min + self.y_max)
-            if t.endswith("0"):
-                n = len(self.xMl) - 1
-                xpos = self.xMl[-1]
-                ypos = self.yMl[-1]
-                delta = self.slope_list[-1]
-                self.checkCloseSignal(n, xpos, ypos, delta)
-                self.checkOpenSignal(n, xpos, ypos)
-
+                elif self.mode == "mock":
+                    change = random.randint(-8, 8)
+                    if abs(change) < 4:
+                        price += change * 0.001
+                        price = round(price, 3)
+                elif self.mode == "history":
+                    price = self.fake_df.iloc[self.fake_count, 3]
+                    self.fake_count += 1
+                else:
+                    raise ValueError("Wrong mode: " + self.mode)
+                df = df.append(pd.DataFrame([[t, price],], columns=["time","price"]))
+                df.index = range(df.shape[0])
+                if dt.datetime.now().second == 0:
+                    df.to_csv("log/" + date + ".csv", index=False)
+                self.xM = list(df[df["time"].apply(lambda s: s.endswith("30") or s.endswith("00"))].index)
+                if len(self.xM) < 2:
+                    continue
+                self.yM = df[df["time"].apply(lambda s: s.endswith("30") or s.endswith("00"))]["price"].tolist()
+                self.xMl = self.xM[1:]
+                self.yMl = self.yM[1:]
+                self.Nl = list(range(len(self.xMl)))
+                try:
+                    self.slope_list = [int(round(1000 * z)) for z in np.diff(self.yM)]
+                except ValueError as e:
+                    print(self.xM)
+                    print(self.yM)
+                    raise(e)
+                self.y_min = df["price"].min()
+                self.y_max = df["price"].max()
+                self.y_mid = 0.5 * (self.y_min + self.y_max)
+                if t.endswith("0"):
+                    n = len(self.xMl) - 1
+                    xpos = self.xMl[-1]
+                    ypos = self.yMl[-1]
+                    delta = self.slope_list[-1]
+                    self.checkOpenSignal(n, xpos, ypos)
+                    self.checkCloseSignal(n, xpos, ypos, delta)
 
 
     def refresh_func(self, event):
@@ -328,23 +314,9 @@ class Strategy():
                 if self.short_trigger_price is not None:
                     self.ax.plot(self.xM, [self.short_trigger_price, ] * len(self.xM), "--g", linewidth=0.5)
                 self.ax.set_title(str(round(self.pnl, 3)))
-                plt.pause(5)
+                plt.pause(30)
             else:
                 plt.pause(120)
-
-
-    def message(self, message_type, xpos, ypos, direction):
-        root = Tk()
-        root.withdraw()  # 提示框主窗口隐藏
-        if message_type == "close":
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Close " + direction + " position @ " + str(
-                xpos) + " with price: " + str(ypos))
-        elif message_type == "open" and direction == 'B':
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open long position @ " + str(
-                xpos) + " with price: " + str(ypos))
-        elif message_type == "open" and direction == 'S':
-            messagebox.showinfo("Signal", dt.datetime.strftime(dt.datetime.now(), "%H:%M:%S") + " Open short position @ " + str(
-                xpos) + " with price: " + str(ypos))
 
 
 
