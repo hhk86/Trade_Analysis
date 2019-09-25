@@ -71,6 +71,8 @@ class Strategy():
             self.date = str(dt.datetime.now().date())
             self.pnl = 0
             self.refresh = True
+            self.label = True
+            self.pause = False
 
 
         if pos_type == "long" or pos_type == "all":
@@ -234,6 +236,8 @@ class Strategy():
 
         while True:
             time.sleep(0.9)
+            if self.pause is True:
+                continue
             now = dt.datetime.now()
             # if now.microsecond < 999 and now.second % 2 == 0:
             t = dt.datetime.strftime(now, "%H:%M:%S")
@@ -291,6 +295,26 @@ class Strategy():
         else:
             print("Stop refreshing")
 
+    def labelSwitch(self, event):
+        self.label = not self.label
+        if self.label:
+            print("Print labels")
+        else:
+            print("Remove labels")
+        plt.close()
+        self.draw()
+
+
+    def pauseSwitch(self, event):
+        self.pause = not self.pause
+        if self.pause:
+            print("Strategy paused")
+        else:
+            print("Strategy resumed")
+        plt.close()
+        self.draw()
+
+
     def draw(self):
         while True:
             try:
@@ -304,17 +328,25 @@ class Strategy():
         axnext = plt.axes([0.6, 0.05, 0.1, 0.075])
         bnext = Button(axnext, 'Refresh')
         bnext.on_clicked(self.refresh_func)
+        axlabel = plt.axes([0.4, 0.05, 0.1, 0.075])
+        bnlabel = Button(axlabel, 'Label')
+        bnlabel.on_clicked(self.labelSwitch)
+        axpause = plt.axes([0.2, 0.05, 0.1, 0.075])
+        bnpause = Button(axpause, 'Pause')
+        bnpause.on_clicked(self.pauseSwitch)
         while True:
             if self.refresh:
                 self.ax.lines = list()
                 self.ax.texts = list()
                 self.ax.plot(self.xM, self.yM, color="black", linewidth=1)
-                for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
-                    self.ax.text(xpos - 1, ypos + self.y_span * 0.05, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
+                if self.label is True:
+                    for n, xpos, ypos, value in zip(self.Nl, self.xMl, self.yMl, self.slope_list):
+                        self.ax.text(xpos - 1, ypos + self.y_span * 0.05, str(abs(value)), fontsize=6, color="gray", fontweight="bold")
                 for x_slice, y_slice, x_point, y_point, sig_type in self.signal_list:
                     self.ax.plot(x_slice, y_slice, color="steelblue", linewidth=1)
-                    self.ax.text(x_point, self.y_min - 0.1 * self.y_span, sig_type, fontsize=5, color="steelblue",
-                                 fontweight="bold")
+                    if self.label is True:
+                        self.ax.text(x_point, self.y_min - 0.1 * self.y_span, sig_type, fontsize=5, color="steelblue",
+                                     fontweight="bold")
                 for xpos, ypos, close_type, x, start_price in self.close_list:
                     self.ax.plot([xpos, ], [ypos, ], "*k", markersize=5)
                     if ypos != start_price:
@@ -329,7 +361,10 @@ class Strategy():
                     self.ax.plot(self.xM, [self.long_trigger_price, ] * len(self.xM), "--r", linewidth=0.5)
                 if self.short_trigger_price is not None:
                     self.ax.plot(self.xM, [self.short_trigger_price, ] * len(self.xM), "--g", linewidth=0.5)
-                self.ax.set_title(str(round(self.pnl, 3)))
+                if self.pause:
+                    self.ax.set_title("Strategy Paused !")
+                else:
+                    self.ax.set_title(str(round(self.pnl, 3)))
                 self.ax.set_ylim(self.y_min - self.y_span * 0.2, self.y_max + self.y_span * 0.1)
                 plt.pause(5)
             else:
