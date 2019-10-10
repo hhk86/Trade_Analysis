@@ -304,7 +304,6 @@ class Strategy():
         plt.close()
         self.draw()
 
-
     def pauseSwitch(self, event):
         self.pause = not self.pause
         if self.pause:
@@ -313,7 +312,6 @@ class Strategy():
             print("Strategy resumed")
         plt.close()
         self.draw()
-
 
     def draw(self):
         while True:

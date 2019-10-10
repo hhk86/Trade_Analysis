@@ -142,7 +142,7 @@ def plot30sPrice_new(whole_df):
 
 
 if __name__ == "__main__":
-    whole_df = pd.read_csv("SH510500.csv")
-    whole_df["bc"] = whole_df["bc1"] + whole_df["bc2"] + whole_df["bc3"]
-    whole_df["sc"] = whole_df["sc1"] + whole_df["sc2"] + whole_df["sc3"]
-    plot30sPrice_new(whole_df)
+    whole_df = pd.read_csv("SH600519.csv")
+    # whole_df["bc"] = whole_df["bc1"] + whole_df["bc2"] + whole_df["bc3"]
+    # whole_df["sc"] = whole_df["sc1"] + whole_df["sc2"] + whole_df["sc3"]
+    plot30sPrice(whole_df)
