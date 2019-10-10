@@ -16,18 +16,17 @@ def backtest_slice(q, name, i, x, y, z):
     stat_df = obj.stat_df
     q.put(stat_df)
     print("Process end", i)
-    # q.put(pd.DataFrame([[1,2,3], [4,5,6]]))
 
 
 
 class Strategy():
-    def __init__(self, x1, y, z, name=None, fake=False) -> None:
+    def __init__(self, x1, y, z, name, fake=False) -> None:
         if fake is True:
             return
-        if name is None:
-            self.all_data = pd.read_csv("SH600000.csv")
-        else:
-            self.all_data = pd.read_csv(name)
+        # if name is None:
+        #     self.all_data = pd.read_csv("SH600000.csv")
+        # else:
+        self.all_data = pd.read_csv(name)
         self.all_data["price"] = self.all_data["price"].apply(lambda x: round(x, 3))
         self.all_data = self.all_data[["date", "time", "price"]]
         self.date_list = sorted(list(set(self.all_data["date"])))
@@ -36,6 +35,7 @@ class Strategy():
         self.xtick = list(range(0, 14401, 1800))
         self.xticklabel = ["9:30", "10:00", "10:30", "11:00", "11:30/1:00", "1:30", "2:00", "2:30", "3:00"]
         self.plot = True
+        self.basic_statistics()
         self.defaultParam(x1, y, z)
 
     def defaultParam(self, x, y, z) -> None:
@@ -104,30 +104,28 @@ class Strategy():
         # self.P_h1_W = 0
         # self.P_R_ADJ = 0
         # self.switch = [True, True,   True, True, True, True, True, True,       True, True, True, True, True, True]
-        self.P_NS_1 = 3
-        self.P_NS_2 = 6
-        self.P_NS_3 = 3
-        self.P_NS_4 = 4
-        self.P_NS_5 = 4
-        self.P_CON_1 = 2 # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
-        self.P_CON_2 = 6
-        self.P_CON_3 = 3
-        self.P_CON_4 = 2
-        self.P_CON_5 = 5
-        self.P_RAPB_1 = 9
-        self.P_RAPS_1 = 9
+        self.P_NS_1 = int(round(3 * self.multiplier))
+        self.P_NS_2 = int(round(6 * self.multiplier))
+        self.P_NS_3 = int(round(3 * self.multiplier))
+        self.P_NS_4 = int(round(4 * self.multiplier))
+        self.P_NS_5 = int(round(4 * self.multiplier))
+        self.P_CON_1 = int(round(2 * self.multiplier)) # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
+        self.P_CON_2 = int(round(6 * self.multiplier))
+        self.P_CON_3 = int(round(3 * self.multiplier))
+        self.P_CON_4 = int(round(2 * self.multiplier))
+        self.P_CON_5 = int(round(5 * self.multiplier))
+        self.P_RAPB_1 = int(round(9 * self.multiplier))
+        self.P_RAPS_1 = int(round(9 * self.multiplier))
         self.P_W_1 = 0.6
         self.P_W_2 = 0.8
-        self.P_L_1 = 15
-        self.P_L_2 = 30
-        self.P_L_3 = 12
+        self.P_L_1 = int(round(15 * self.multiplier))
+        self.P_L_2 = int(round(30 * self.multiplier))
+        self.P_L_3 = int(round(12 * self.multiplier))
         self.P_h1_W = 0
         self.P_R_ADJ = 0
-        self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
+        # self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
         self.switch = [True,] * 14
-        self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
-
-
+        # self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
 
     def get_oneday_data(self, date: str) -> pd.DataFrame:
         df = self.all_data[self.all_data["date"] == date].copy()
@@ -706,12 +704,16 @@ class Strategy():
         print("Slice data into", str(n), "part.")
 
 
-
+    def basic_statistics(self):
+        self.std = self.all_data.groupby("date").std()["price"].mean()
+        self.multiplier = self.std / 0.0214 *2
+        print(self.multiplier)
 
 
 if __name__ == "__main__":
-    obj = Strategy(1, 1, 1, fake=True)
-    # obj.calibrate()
+    obj = Strategy(1, 1, 1, "SZ000002.csv", fake=False)
+    # obj.slice()
+    # obj.basic_statistics()
     obj.multi_backtest(0,0,0)
     obj.printStat()
 
