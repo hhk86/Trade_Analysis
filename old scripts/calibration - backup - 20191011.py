@@ -66,10 +66,10 @@ class TsTickData(object):
             raise Exception("Error when execute tsl")
 
 
-def backtest_slice(q, name, i,  arg_dict, plot=False):
+def backtest_slice(q, name, i, arg_dict):
     obj = Strategy(name, False)
     obj.defaultParam(arg_dict)
-    obj.backtest(plot=plot)
+    obj.backtest(plot=True)
     stat_df = obj.stat_df
     q.put(stat_df)
     # print("Process end", i)
@@ -106,95 +106,95 @@ class Strategy():
             print("arg_dict is None")
         elif len(arg_dict) == 0:
             print("arg_dict is empty")
-        sw1 = arg_dict["sw1"]
-        sw2 = arg_dict["sw2"]
-        sw3 = arg_dict["sw3"]
-        sw4 = arg_dict["sw4"]
-        sw5 = arg_dict["sw5"]
-        sw6 = arg_dict["sw6"]
-        sw7 = arg_dict["sw7"]
-        sw8 = arg_dict["sw8"]
-        sw9 = arg_dict["sw9"]
-        sw10 = arg_dict["sw10"]
-        sw11 = arg_dict["sw11"]
-        sw12 = arg_dict["sw12"]
-        sw13 = arg_dict["sw13"]
-        sw14 = arg_dict["sw14"]
+        else:
+            self.multiplier = arg_dict["multiplier"]
 
-
-
-        multiplier = arg_dict["multiplier"]
-        ns1 = arg_dict["ns1"]
-        ns2 = arg_dict["ns2"]
-        ns3 = arg_dict["ns3"]
-        ns4 = arg_dict["ns4"]
-        ns5 = arg_dict["ns5"]
-        # con1 = arg_dict["con1"]
-        # con2 = arg_dict["con2"]
-        # con3 = arg_dict["con3"]
-        # con4 = arg_dict["con4"]
-        # con5 = arg_dict["con5"]
-        # rapb = arg_dict["rapb"]
-        # raps = arg_dict["raps"]
-        con1 = 2
-        con2 = 6
-        con3 = 3
-        con4 = 2
-        con5 = 5
-        rapb = arg_dict["rapb"]
-        raps = arg_dict["raps"]
-
-
-
-        # Default parameter backup
-        # self.P_NS_1 = int(round(3 * multiplier))
-        # self.P_NS_2 = int(round(6 * multiplier))
-        # self.P_NS_3 = int(round(3 * multiplier))
-        # self.P_NS_4 = int(round(4 * multiplier))
-        # self.P_NS_5 = int(round(4 * multiplier))
-        # self.P_CON_1 = int(round(2 * multiplier)) # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
-        # self.P_CON_2 = int(round(6 * multiplier))
-        # self.P_CON_3 = int(round(3 * multiplier))
-        # self.P_CON_4 = int(round(2 * multiplier))
-        # self.P_CON_5 = int(round(5 * multiplier))
-        # self.P_RAPB_1 = int(round(9 * multiplier))
-        # self.P_RAPS_1 = int(round(9 * multiplier))
-        # self.P_W_1 = 0.6
-        # self.P_W_2 = 0.8
-        # self.P_L_1 = int(round(15 * multiplier))
-        # self.P_L_2 = int(round(30 * multiplier))
-        # self.P_L_3 = int(round(12 * multiplier))
+        ################ Minute data
+        # self.P_NS_1 = 3
+        # self.P_NS_2 = 6
+        # self.P_NS_3 = 3
+        # self.P_NS_4 = 3
+        # self.P_NS_5 = 4
+        # self.P_CON_1 = 3
+        # self.P_CON_2 = 6
+        # self.P_CON_3 = 3
+        # self.P_CON_4 = 3
+        # self.P_CON_5 = 4
+        # self.P_RAPB_1 = 12
+        # self.P_RAPS_1 = 12
+        # self.P_W_1 = 2 / 3
+        # self.P_W_2 = 3 / 4
+        # self.P_L_1 = 15
+        # self.P_L_2 = 30
+        # self.P_L_3 = 12
         # self.P_h1_W = 0
         # self.P_R_ADJ = 0
-        # # self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
-        # self.switch = [True,] * 14
-        # # self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
-        ################################
 
 
+        # self.P_NS_1 = 4
+        # self.P_NS_2 = 6
+        # self.P_NS_3 = 3
+        # self.P_NS_4 = 3
+        # self.P_NS_5 = 4
+        # self.P_CON_1 = 3
+        # self.P_CON_2 = 6
+        # self.P_CON_3 = 3
+        # self.P_CON_4 = 4
+        # self.P_CON_5 = 4
+        # self.P_RAPB_1 = 9
+        # self.P_RAPS_1 = 13
+        # self.P_W_1 = 0.7
+        # self.P_W_2 = 0.8
+        # self.P_L_1 = 15
+        # self.P_L_2 = 30
+        # self.P_L_3 = 12
+        # self.P_h1_W = 0
+        # self.P_R_ADJ = 0
+        # # self.switch= [True, True,    False, False, False, False, True, True,    True,True, False,True,True, True]
+        # self.switch= [True, True,    False, False, False, False, True, False,    False, False, False,True,True, False]
 
-        self.P_NS_1 = int(round(ns1 * multiplier))
-        self.P_NS_2 = int(round(ns2 * multiplier))
-        self.P_NS_3 = int(round(ns3 * multiplier))
-        self.P_NS_4 = int(round(ns4 * multiplier))
-        self.P_NS_5 = int(round(ns5 * multiplier))
-        self.P_CON_1 = int(round(con1 * multiplier)) # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
-        self.P_CON_2 = int(round(con2 * multiplier))
-        self.P_CON_3 = int(round(con3 * multiplier))
-        self.P_CON_4 = int(round(con4 * multiplier))
-        self.P_CON_5 = int(round(con5 * multiplier))
-        self.P_RAPB_1 = int(round(rapb * multiplier))
-        self.P_RAPS_1 = int(round(raps * multiplier))
+        ###################### 30S data
+        # self.P_NS_1 = 3
+        # self.P_NS_2 = 5
+        # self.P_NS_3 = 3
+        # self.P_NS_4 = 3
+        # self.P_NS_5 = 3
+        # self.P_CON_1 = 3
+        # self.P_CON_2 = 5
+        # self.P_CON_3 = 3
+        # self.P_CON_4 = 3
+        # self.P_CON_5 = 3
+        # self.P_RAPB_1 = 9
+        # self.P_RAPS_1 = 9
+        # self.P_W_1 = 0.6
+        # self.P_W_2 = 0.8
+        # self.P_L_1 = 15
+        # self.P_L_2 = 30
+        # self.P_L_3 = 12
+        # self.P_h1_W = 0
+        # self.P_R_ADJ = 0
+        # self.switch = [True, True,   True, True, True, True, True, True,       True, True, True, True, True, True]
+        self.P_NS_1 = int(round(3 * self.multiplier))
+        self.P_NS_2 = int(round(6 * self.multiplier))
+        self.P_NS_3 = int(round(3 * self.multiplier))
+        self.P_NS_4 = int(round(4 * self.multiplier))
+        self.P_NS_5 = int(round(4 * self.multiplier))
+        self.P_CON_1 = int(round(2 * self.multiplier)) # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
+        self.P_CON_2 = int(round(6 * self.multiplier))
+        self.P_CON_3 = int(round(3 * self.multiplier))
+        self.P_CON_4 = int(round(2 * self.multiplier))
+        self.P_CON_5 = int(round(5 * self.multiplier))
+        self.P_RAPB_1 = int(round(9 * self.multiplier))
+        self.P_RAPS_1 = int(round(9 * self.multiplier))
         self.P_W_1 = 0.6
         self.P_W_2 = 0.8
-        self.P_L_1 = int(round(15 * multiplier))
-        self.P_L_2 = int(round(30 * multiplier))
-        self.P_L_3 = int(round(12 * multiplier))
+        self.P_L_1 = int(round(15 * self.multiplier))
+        self.P_L_2 = int(round(30 * self.multiplier))
+        self.P_L_3 = int(round(12 * self.multiplier))
         self.P_h1_W = 0
         self.P_R_ADJ = 0
         # self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
-        # self.switch = [True,] * 14
-        self.switch = [sw1, sw1, sw3, sw4, sw5, sw6, sw7, sw8, sw9, sw10, sw11, sw12, sw13, sw14]
+        self.switch = [True,] * 14
         # self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
 
     def get_oneday_data(self, date: str) -> pd.DataFrame:
@@ -428,7 +428,7 @@ class Strategy():
             self.stat_df = self.stat_df.append(df)
         elif pos_type == "short":
             df = pd.DataFrame([[self.short_sig_type, "S", self.short_start_price, \
-                                close_price, self.short_start_price / close_price - 1, self.date], ], \
+                                close_price, self.short_start_price - close_price, self.date], ], \
                               columns=["sig_type", "direction", "open_price", "close_price", "pnl", "date"])
             self.stat_df = self.stat_df.append(df)
         else:
@@ -572,7 +572,7 @@ class Strategy():
 
         return None, None, 0
 
-    def backtest(self, plot=False) -> None:
+    def backtest(self, plot=True) -> None:
         self.plot = plot
         self.stat_df = pd.DataFrame(columns= ["sig_type", "direction", "open_price", "close_price", "pnl", "date"])
         for date in self.date_list:
@@ -645,8 +645,104 @@ class Strategy():
                 self.stat.to_csv("calibration/stat_"+ name + '_' + str(mean) + ".csv")
         return self.stat
 
+    def calibrate_old(self) -> None:
+        # # NS1
+        # for x in range(2, 5):
+        #     self.multi_backtest(x, 0, 0)
+        #     obj.printStat("P_NS_1_is_" +  str(x))
+        # # NS2
+        # for (x, y) in zip([4, 5, 6, 4, 5, 6], [3, 3, 3, 4, 4, 4]):
+        #     self.multi_backtest(x, y, 0)
+        #     obj.printStat("P_NS_2_is_" +  str(x) + "_P_NS_3_is_" + str(y))
+        # #NS3
+        # for (x, y) in zip([2, 3, 3, 4, 4], [3, 3, 4, 3, 4]):
+        #     self.multi_backtest(x, y, 0)
+        #     obj.printStat("P_NS_4_is_" +  str(x) + "_P_NS_5_is_" + str(y))
+        # # CON1
+        # for x in [2, 3, 4]:
+        #     self.multi_backtest(x, 0, 0)
+        #     obj.printStat("P_CON_1_is_" +  str(x))
+        # # CON2
+        # for (x, y) in zip([4, 5, 6, 4, 5, 6], [3, 3, 3, 4, 4, 4]):
+        #     self.multi_backtest(x, y, 0)
+        #     obj.printStat("P_CON_2_is_" +  str(x) + "_P_CON_3_is_" + str(y))
+        # #CON3
+        # for (x, y) in zip([2, 3, 3, 4, 4], [3, 3, 4, 3, 4]):
+        #     self.multi_backtest(x, y, 0)
+        #     obj.printStat("P_CON_4_is_" +  str(x) + "_P_CON_5_is_" + str(y))
+        # #RAPB
+        # for x in range(6, 13):
+        #     self.multi_backtest(x, 0, 0)
+        #     obj.printStat("P_RAPB_1_is_" +  str(x))
+        # #RAPS
+        # for x in range(4, 6):
+        #     self.multi_backtest(x, 0, 0)
+        #     obj.printStat("P_RAPS_1_is_" +  str(x))
+        # self.defaultParam()
+        # self.P_RAPB_1 = 9
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPB_1_is_9")
+        # self.defaultParam()
+        # self.P_RAPB_1 = 10
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPB_1_is_10")
+        # self.defaultParam()
+        # self.P_RAPB_1 = 11
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPB_1_is_11")
+        # self.defaultParam()
+        # self.P_RAPB_1 = 13
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPB_1_is_13")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 7
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_7")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 8
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_8")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 9
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_9")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 10
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_10")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 11
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_11")
+        # self.defaultParam()
+        # self.P_RAPS_1 = 13
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_RAPS_1_is_13")
 
-    def multi_backtest(self, arg_dict=None, plot=False):
+
+
+        ################ Hyper Parameters #######################
+        # self.defaultParam()
+        # self.P_R_ADJ = 2
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_R_ADJ_is_2")
+        # self.defaultParam()
+        # self.P_L_3 = 8
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_L3_is_8")
+        # self.defaultParam()
+        # self.P_L_3 = 10
+        # self.multi_backtest(plot=False)
+        # obj.printStat("P_L3_is_10")
+
+
+        # for (P_W_1, P_W_2) in zip([0.55, 0.55, 0.6, 0.6, 0.7, 0.7, 0.75, 0.75], [0.7, 0.75, 0.75, 0.8, 0.85, 0.8, 0.85]):
+        #     self.multi_backtest(P_W_1, P_W_2, 1)
+        #     obj.printStat("X_" + str(P_W_1) + "Y_" + str(P_W_2))
+        pass
+
+
+    def multi_backtest(self, arg_dict=None):
         if not os.path.exists("E:\\data_slice\\" + self.ticker +"\\data_slice_9.csv"):
             self.slice()
         df = pd.DataFrame()
@@ -654,7 +750,7 @@ class Strategy():
         jobs = list()
         for i in range(0, 10):
             ticker = "E:\\data_slice\\" + self.ticker +"\\data_slice_" + str(i) + ".csv"
-            p = Process(target=backtest_slice, args = (q, ticker, i, arg_dict, plot))
+            p = Process(target=backtest_slice, args = (q, ticker, i, arg_dict))
             jobs.append(p)
             p.start()
             # print("Start process" + str(i))
@@ -719,93 +815,22 @@ class Strategy():
         print("Data saved to: " + "E:\\tickdata\\" + ticker + ".csv")
 
     def opt_func(self, arg_dict):
-        self.multi_backtest(arg_dict, plot=False)
-        self.printStat()
-        self.stat["log_sum"] = self.stat["mean"].mul(self.stat["count"].apply(lambda x: math.log10(x + 1)))
-        return - self.stat["log_sum"].sum()
-        # return - self.printStat()["sum"].sum()
+        self.multi_backtest(arg_dict)
+        return - self.printStat()["sum"].sum()
 
     def calibrate(self):
         self.makeHyperParam()
-        arg_dict  = {"sw1": hp.choice("sw1",[True, False]),
-                     "sw2": hp.choice("sw2", [True, False]),
-                     "sw3": hp.choice("sw3", [True, False]),
-                     "sw4": hp.choice("sw4", [True, False]),
-                     "sw5": hp.choice("sw5", [True, False]),
-                     "sw6": hp.choice("sw6", [True, False]),
-                     "sw7": hp.choice("sw7", [True, False]),
-                     "sw8": hp.choice("sw8", [True, False]),
-                     "sw9": hp.choice("sw9", [True, False]),
-                     "sw10": hp.choice("sw10", [True, False]),
-                     "sw11": hp.choice("sw11", [True, False]),
-                     "sw12": hp.choice("sw12", [True, False]),
-                     "sw13": hp.choice("sw13", [True, False]),
-                     "sw14": hp.choice("sw14", [True, False]),
-                    "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
-                     "ns1":hp.choice("ns1",[3]),
-                     "ns2": hp.choice("ns2", [6]),
-                    "ns3": hp.choice("ns3", [3]),
-                    "ns4": hp.choice("ns4", [4]),
-                    "ns5": hp.choice("ns5", [4]),
-                     "rapb": hp.choice("rapb", [9]),
-                     "raps": hp.choice("raps", [9]),}
-        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
-        print("The calibrated switch:")
-        print(best)
-        self.multi_backtest(best, plot=True)
-        print("Returns with best parameters:")
-        self.printStat()
-        a = input("Pause!")
-        sw1 = best["sw1"]
-        sw2 = best["sw2"]
-        sw3 = best["sw3"]
-        sw4 = best["sw4"]
-        sw5 = best["sw5"]
-        sw6 = best["sw6"]
-        sw7 = best["sw7"]
-        sw8 = best["sw8"]
-        sw9 = best["sw9"]
-        sw10 = best["sw10"]
-        sw11 = best["sw11"]
-        sw12 = best["sw12"]
-        sw13 = best["sw13"]
-        sw14 = best["sw14"]
-
-        arg_dict  = {"sw1": hp.choice("sw1",[sw1]),
-                     "sw2": hp.choice("sw2", [sw2]),
-                     "sw3": hp.choice("sw3", [sw3]),
-                     "sw4": hp.choice("sw4", [sw4]),
-                     "sw5": hp.choice("sw5", [sw5]),
-                     "sw6": hp.choice("sw6", [sw6]),
-                     "sw7": hp.choice("sw7", [sw7]),
-                     "sw8": hp.choice("sw8", [sw8]),
-                     "sw9": hp.choice("sw9", [sw9]),
-                     "sw10": hp.choice("sw10", [sw10]),
-                     "sw11": hp.choice("sw11", [sw11]),
-                     "sw12": hp.choice("sw12", [sw12]),
-                     "sw13": hp.choice("sw13", [sw13]),
-                     "sw14": hp.choice("sw14", [sw14]),
-                    "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
-                     "ns1":hp.choice("ns1",range(1, 6)),
-                     "ns2": hp.choice("ns2", range(3, 10)),
-                    "ns3": hp.choice("ns3", range(1, 6)),
-                    "ns4": hp.choice("ns4", range(2, 8)),
-                    "ns5": hp.choice("ns5", range(2, 8)),
-                     "rapb": hp.choice("rapb", range(5, 15)),
-                     "raps": hp.choice("raps", range(5, 15)),}
-        print("Debug the arg_dict:")
-        print(arg_dict)
-
-        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
+        arg_dict  = {"multiplier":hp.uniform("multiplier", self.multiplier_base, 5 * self.multiplier_base), "eta":hp.uniform("eta",0.05,0.5)}
+        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=5)
         return best
 
 
 
 
 if __name__ == "__main__":
-    obj = Strategy("SZ000002", fake=False)
-    # obj.multi_backtest({'multiplier': 18.035188692508903, 'ns1': 3, 'ns2': 0, 'ns3': 0, 'ns4': 1, 'ns5': 2, 'rapb': 9, 'raps': 6, 'sw1': 0, 'sw10': 0, 'sw11': 0, 'sw12': 0, 'sw13': 0, 'sw14': 0, 'sw2': 0, 'sw3': 0, 'sw4': 0, 'sw5': 0, 'sw6': 0, 'sw7': 0, 'sw8': 0, 'sw9': 0})
-    # print(obj.printStat())
+    obj = Strategy("SH510500", fake=False)
     print(obj.calibrate())
+    # obj.multi_backtest()
+    # obj.printStat()
 
 
