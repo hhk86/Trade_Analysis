@@ -627,6 +627,9 @@ class Strategy():
         # print(date)
 
     def printStat(self, name=None, printSave=True) -> None:
+        if len(self.stat_df) == 0:
+            self.stat = None
+            return
         df1 = self.stat_df.groupby(by=["sig_type", "direction"]).mean()
         df2 = self.stat_df.groupby(by=["sig_type", "direction"]).count()
         df = pd.merge(df1, df2, on=["sig_type", "direction"])
@@ -721,70 +724,98 @@ class Strategy():
     def opt_func(self, arg_dict):
         self.multi_backtest(arg_dict, plot=False)
         self.printStat()
+        if self.stat is None:
+            print("No trades under this parameter set!")
+            return 0
         self.stat["log_sum"] = self.stat["mean"].mul(self.stat["count"].apply(lambda x: math.log10(x + 1)))
         return - self.stat["log_sum"].sum()
         # return - self.printStat()["sum"].sum()
 
     def calibrate(self):
         self.makeHyperParam()
-        arg_dict  = {"sw1": hp.choice("sw1",[True, False]),
-                     "sw2": hp.choice("sw2", [True, False]),
-                     "sw3": hp.choice("sw3", [True, False]),
-                     "sw4": hp.choice("sw4", [True, False]),
-                     "sw5": hp.choice("sw5", [True, False]),
-                     "sw6": hp.choice("sw6", [True, False]),
-                     "sw7": hp.choice("sw7", [True, False]),
-                     "sw8": hp.choice("sw8", [True, False]),
-                     "sw9": hp.choice("sw9", [True, False]),
-                     "sw10": hp.choice("sw10", [True, False]),
-                     "sw11": hp.choice("sw11", [True, False]),
-                     "sw12": hp.choice("sw12", [True, False]),
-                     "sw13": hp.choice("sw13", [True, False]),
-                     "sw14": hp.choice("sw14", [True, False]),
-                    "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
-                     "ns1":hp.choice("ns1",[3]),
-                     "ns2": hp.choice("ns2", [6]),
-                    "ns3": hp.choice("ns3", [3]),
-                    "ns4": hp.choice("ns4", [4]),
-                    "ns5": hp.choice("ns5", [4]),
-                     "rapb": hp.choice("rapb", [9]),
-                     "raps": hp.choice("raps", [9]),}
-        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
-        print("The calibrated switch:")
-        print(best)
-        self.multi_backtest(best, plot=True)
-        print("Returns with best parameters:")
-        self.printStat()
-        a = input("Pause!")
-        sw1 = best["sw1"]
-        sw2 = best["sw2"]
-        sw3 = best["sw3"]
-        sw4 = best["sw4"]
-        sw5 = best["sw5"]
-        sw6 = best["sw6"]
-        sw7 = best["sw7"]
-        sw8 = best["sw8"]
-        sw9 = best["sw9"]
-        sw10 = best["sw10"]
-        sw11 = best["sw11"]
-        sw12 = best["sw12"]
-        sw13 = best["sw13"]
-        sw14 = best["sw14"]
+        # arg_dict  = {"sw1": hp.choice("sw1",[True, False]),
+        #              "sw2": hp.choice("sw2", [True, False]),
+        #              "sw3": hp.choice("sw3", [True, False]),
+        #              "sw4": hp.choice("sw4", [True, False]),
+        #              "sw5": hp.choice("sw5", [True, False]),
+        #              "sw6": hp.choice("sw6", [True, False]),
+        #              "sw7": hp.choice("sw7", [True, False]),
+        #              "sw8": hp.choice("sw8", [True, False]),
+        #              "sw9": hp.choice("sw9", [True, False]),
+        #              "sw10": hp.choice("sw10", [True, False]),
+        #              "sw11": hp.choice("sw11", [True, False]),
+        #              "sw12": hp.choice("sw12", [True, False]),
+        #              "sw13": hp.choice("sw13", [True, False]),
+        #              "sw14": hp.choice("sw14", [True, False]),
+        #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
+        #              "ns1":hp.choice("ns1",[3]),
+        #              "ns2": hp.choice("ns2", [6]),
+        #             "ns3": hp.choice("ns3", [3]),
+        #             "ns4": hp.choice("ns4", [4]),
+        #             "ns5": hp.choice("ns5", [4]),
+        #              "rapb": hp.choice("rapb", [9]),
+        #              "raps": hp.choice("raps", [9]),}
+        # best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
+        # print("The calibrated switch:")
+        # print(best)
+        # self.multi_backtest(best, plot=True)
+        # print("Returns with best parameters:")
+        # self.printStat()
+        # a = input("Pause!\n")
+        # sw1 = best["sw1"]
+        # sw2 = best["sw2"]
+        # sw3 = best["sw3"]
+        # sw4 = best["sw4"]
+        # sw5 = best["sw5"]
+        # sw6 = best["sw6"]
+        # sw7 = best["sw7"]
+        # sw8 = best["sw8"]
+        # sw9 = best["sw9"]
+        # sw10 = best["sw10"]
+        # sw11 = best["sw11"]
+        # sw12 = best["sw12"]
+        # sw13 = best["sw13"]
+        # sw14 = best["sw14"]
+        # print(sw1, sw2, sw3, sw4, sw5, sw6, sw7,sw8, sw9, sw10, sw11, sw12, sw13, sw14)
 
-        arg_dict  = {"sw1": hp.choice("sw1",[sw1]),
-                     "sw2": hp.choice("sw2", [sw2]),
-                     "sw3": hp.choice("sw3", [sw3]),
-                     "sw4": hp.choice("sw4", [sw4]),
-                     "sw5": hp.choice("sw5", [sw5]),
-                     "sw6": hp.choice("sw6", [sw6]),
-                     "sw7": hp.choice("sw7", [sw7]),
-                     "sw8": hp.choice("sw8", [sw8]),
-                     "sw9": hp.choice("sw9", [sw9]),
-                     "sw10": hp.choice("sw10", [sw10]),
-                     "sw11": hp.choice("sw11", [sw11]),
-                     "sw12": hp.choice("sw12", [sw12]),
-                     "sw13": hp.choice("sw13", [sw13]),
-                     "sw14": hp.choice("sw14", [sw14]),
+        # arg_dict  = {"sw1": hp.choice("sw1",[sw1,]),
+        #              "sw2": hp.choice("sw2", [sw2,]),
+        #              "sw3": hp.choice("sw3", [sw3,]),
+        #              "sw4": hp.choice("sw4", [sw4,]),
+        #              "sw5": hp.choice("sw5", [sw5,]),
+        #              "sw6": hp.choice("sw6", [sw6,]),
+        #              "sw7": hp.choice("sw7", [sw7,]),
+        #              "sw8": hp.choice("sw8", [sw8,]),
+        #              "sw9": hp.choice("sw9", [sw9,]),
+        #              "sw10": hp.choice("sw10", [sw10,]),
+        #              "sw11": hp.choice("sw11", [sw11,]),
+        #              "sw12": hp.choice("sw12", [sw12,]),
+        #              "sw13": hp.choice("sw13", [sw13,]),
+        #              "sw14": hp.choice("sw14", [sw14,]),
+        #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
+        #              "ns1":hp.choice("ns1",range(1, 6)),
+        #              "ns2": hp.choice("ns2", range(3, 10)),
+        #             "ns3": hp.choice("ns3", range(1, 6)),
+        #             "ns4": hp.choice("ns4", range(2, 8)),
+        #             "ns5": hp.choice("ns5", range(2, 8)),
+        #              "rapb": hp.choice("rapb", range(5, 15)),
+        #              "raps": hp.choice("raps", range(5, 15)),}
+
+
+        arg_dict  = {"sw1": hp.choice("sw1",[0,]),
+                     "sw2": hp.choice("sw2", [0,]),
+                     "sw3": hp.choice("sw3", [0,]),
+                     "sw4": hp.choice("sw4", [1,]),
+                     "sw5": hp.choice("sw5", [0,]),
+                     "sw6": hp.choice("sw6", [1,]),
+                     "sw7": hp.choice("sw7", [0,]),
+                     "sw8": hp.choice("sw8", [1,]),
+                     "sw9": hp.choice("sw9", [0,]),
+                     "sw10": hp.choice("sw10", [1,]),
+                     "sw11": hp.choice("sw11", [0,]),
+                     "sw12": hp.choice("sw12", [1,]),
+                     "sw13": hp.choice("sw13", [1,]),
+                     "sw14": hp.choice("sw14", [1,]),
                     "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
                      "ns1":hp.choice("ns1",range(1, 6)),
                      "ns2": hp.choice("ns2", range(3, 10)),
@@ -793,6 +824,9 @@ class Strategy():
                     "ns5": hp.choice("ns5", range(2, 8)),
                      "rapb": hp.choice("rapb", range(5, 15)),
                      "raps": hp.choice("raps", range(5, 15)),}
+
+
+
         print("Debug the arg_dict:")
         print(arg_dict)
 
@@ -804,8 +838,8 @@ class Strategy():
 
 if __name__ == "__main__":
     obj = Strategy("SZ000002", fake=False)
-    # obj.multi_backtest({'multiplier': 18.035188692508903, 'ns1': 3, 'ns2': 0, 'ns3': 0, 'ns4': 1, 'ns5': 2, 'rapb': 9, 'raps': 6, 'sw1': 0, 'sw10': 0, 'sw11': 0, 'sw12': 0, 'sw13': 0, 'sw14': 0, 'sw2': 0, 'sw3': 0, 'sw4': 0, 'sw5': 0, 'sw6': 0, 'sw7': 0, 'sw8': 0, 'sw9': 0})
-    # print(obj.printStat())
-    print(obj.calibrate())
+    obj.multi_backtest({'multiplier': 16.728070763490322, 'ns1': 4, 'ns2': 1, 'ns3': 2, 'ns4': 3, 'ns5': 0, 'rapb': 1, 'raps': 9, 'sw1': 0, 'sw10': 0, 'sw11': 0, 'sw12': 0, 'sw13': 0, 'sw14': 0, 'sw2': 0, 'sw3': 0, 'sw4': 0, 'sw5': 0, 'sw6': 0, 'sw7': 0, 'sw8': 0, 'sw9': 0})
+    print(obj.printStat())
+    # print(obj.calibrate())
 
 
