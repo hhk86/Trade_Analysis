@@ -6,12 +6,68 @@ import math
 
 if __name__ == "__main__":
     from multiprocessing import Process, Queue
-    import time
     import sys
     import os
+    import pandas as pd
+    from jinja2 import Template
+    from dateutil.parser import parse as dateparse
+    from hyperopt import fmin, tpe, hp
+    sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
+    import TSLPy3 as ts
 
-def backtest_slice(q, name, i, x, y, z):
-    obj = Strategy(x, y, z, name)
+class TsTickData(object):
+
+
+    def __enter__(self):
+        if ts.Logined() is False:
+            print('天软未登陆或客户端未打开，将执行登陆操作')
+            self.__tsLogin()
+            return self
+
+
+    def __tsLogin(self):
+        ts.ConnectServer("tsl.tinysoft.com.cn", 443)
+        dl = ts.LoginServer("fzzqjyb", "fz123456")
+        print('天软登陆成功')
+
+    def __exit__(self, *arg):
+                ts.Disconnect()
+                print('天软连接断开')
+
+    def ticks(self, code, start_date, end_date):
+        ts_template = Template('''setsysparam(pn_stock(),'SH510500');
+                                  begT:= StrToDate('{{start_date}}');
+                                  endT:= StrToDate('{{end_date}}');
+                                  setsysparam(pn_cycle(),cy_1s());
+                                  setsysparam(pn_rate(),0);
+                                  setsysparam(pn_RateDay(),rd_lastday);
+                                  r:= select ["StockID"] as 'ticker', datetimetostr(["date"]) as "time", ["price"],
+                                             ["buy1"], ["bc1"], ["buy2"],["bc2"], ["buy3"],["bc3"],
+                                             ["sale1"],["sc1"], ["sale2"],["sc2"], ["sale3"],["sc3"]
+                                      from markettable datekey begT to endT of "{{code}}" end;
+                                  return r;''')
+        ts_sql = ts_template.render(start_date=dateparse(start_date).strftime('%Y-%m-%d'),
+                                    end_date=dateparse(end_date).strftime('%Y-%m-%d'),
+                                    code=code)
+        fail, data, _ = ts.RemoteExecute(ts_sql, {})
+
+        def gbk_decode(strlike):
+            if isinstance(strlike, (str, bytes)):
+                strlike = strlike.decode('gbk')
+            return strlike
+
+        def bytes_to_unicode(record):
+            return dict(map(lambda s: (gbk_decode(s[0]), gbk_decode(s[1])), record.items()))
+
+        if not fail:
+            unicode_data = list(map(bytes_to_unicode, data))
+            return pd.DataFrame(unicode_data).set_index(['time', 'ticker'])
+        else:
+            raise Exception("Error when execute tsl")
+
+
+def backtest_slice(q, name, i,  hyperParam):
+    obj = Strategy(name, False, hyperParam)
     obj.backtest(plot=True)
     stat_df = obj.stat_df
     q.put(stat_df)
@@ -20,13 +76,20 @@ def backtest_slice(q, name, i, x, y, z):
 
 
 class Strategy():
-    def __init__(self, x1, y, z, name, fake=False) -> None:
+    def __init__(self, ticker, fake=False, hyperParam=None) -> None:
+        self.ticker = ticker
         if fake is True:
             return
-        # if name is None:
-        #     self.all_data = pd.read_csv("SH600000.csv")
-        # else:
-        self.all_data = pd.read_csv(name)
+        try:
+            self.all_data = pd.read_csv("E:\\tickdata\\" + ticker + ".csv")
+        except FileNotFoundError:
+            if ticker.startswith("E:\\data_slice"):
+                path = ticker
+                self.all_data = pd.read_csv(path)
+            else:
+                print("The tick data of", ticker, "does not exit.\nAutomatically downloading data...\nIt will take about 15 minutes.")
+                self.download_tickdata(ticker)
+                self.all_data = pd.read_csv("E:\\tickdata\\" + ticker + ".csv")
         self.all_data["price"] = self.all_data["price"].apply(lambda x: round(x, 3))
         self.all_data = self.all_data[["date", "time", "price"]]
         self.date_list = sorted(list(set(self.all_data["date"])))
@@ -35,10 +98,14 @@ class Strategy():
         self.xtick = list(range(0, 14401, 1800))
         self.xticklabel = ["9:30", "10:00", "10:30", "11:00", "11:30/1:00", "1:30", "2:00", "2:30", "3:00"]
         self.plot = True
-        self.basic_statistics()
-        self.defaultParam(x1, y, z)
+        if hyperParam is None:
+            self.makeHyperParam()
+        else:
+            self.hyperParam = hyperParam
+        self.multiplier = self.hyperParam["multiplier"]
+        self.defaultParam()
 
-    def defaultParam(self, x, y, z) -> None:
+    def defaultParam(self) -> None:
         ################ Minute data
         # self.P_NS_1 = 3
         # self.P_NS_2 = 6
@@ -575,7 +642,7 @@ class Strategy():
                 self.stat.to_csv("calibration/stat_"+ name + '_' + str(mean) + ".csv")
         return self.stat
 
-    def calibrate(self) -> None:
+    def calibrate_old(self) -> None:
         # # NS1
         # for x in range(2, 5):
         #     self.multi_backtest(x, 0, 0)
@@ -672,14 +739,16 @@ class Strategy():
         pass
 
 
-    def multi_backtest(self, x, y, z, process_num=10):
+    def multi_backtest(self, process_num=10):
+        if not os.path.exists("E:\\data_slice\\" + self.ticker +"\\data_slice_9.csv"):
+            self.slice()
         n = process_num
         df = pd.DataFrame()
         q = Queue()
         jobs = list()
         for i in range(0, n):
-            name = "data_slice/data_slice_" + str(i) + ".csv"
-            p = Process(target=backtest_slice, args = (q, name, i, x, y, z, ))
+            ticker = "E:\\data_slice\\" + self.ticker +"\\data_slice_" + str(i) + ".csv"
+            p = Process(target=backtest_slice, args = (q, ticker, i, self.hyperParam))
             jobs.append(p)
             p.start()
             print("Start process", i)
@@ -693,29 +762,75 @@ class Strategy():
     def slice(self, process_num=10):
         n = process_num
         N = len(self.date_list)
-        for parent, dirnames, filenames in os.walk("data_slice/"):
-            file_list = filenames
-        for file in file_list:
-            os.remove("data_slice/" + file)
+        try:
+            os.removedirs("E:\\data_slice\\" + self.ticker)
+            print("Re-writing the data slice of", self.ticker)
+        except:
+            print("Writing new data slice of", self.ticker)
+        os.makedirs("E:\\data_slice\\" + self.ticker )
+        # for parent, dirnames, filenames in os.walk("E:\\data_slice\\" + ticker):
+        #     file_list = filenames
+        # for file in file_list:
+        #     os.remove("E:\\data_slice\\" + ticker +'\\' + file)
         for i in range(0, n):
             date_scope = self.date_list[math.floor(i * (N / n)): math.floor((i + 1) * (N / n))]
             data_slice = self.all_data[self.all_data["date"].apply(lambda s: True if s in date_scope else False)]
-            data_slice.to_csv("data_slice/data_slice_" + str(i) + ".csv", index=False)
-        print("Slice data into", str(n), "part.")
+            data_slice.to_csv("E:\\data_slice\\" + self.ticker + "\\data_slice_" + str(i) + ".csv", index=False)
+        print("Slice data into " + str(n) + " part.\n Save data slice to: " + "E:\\data_slice\\" + self.ticker)
 
 
-    def basic_statistics(self):
-        self.std = self.all_data.groupby("date").std()["price"].mean()
-        self.multiplier = self.std / 0.0214 *2
-        print(self.multiplier)
+    def makeHyperParam(self):
+        std = self.all_data.groupby("date").std()["price"].mean()
+        multiplier = std / 0.0214 * 2
+        self.hyperParam = {"multiplier": multiplier}
+        print(self.hyperParam)
+
+
+    def download_one_year_data(self, ticker, year):
+        start_date = year + "0101"
+        if year == "2019":
+            end_date = "20190910"
+        else:
+            end_date = year + "1231"
+        with TsTickData() as obj:
+            data = obj.ticks(code=ticker, start_date=start_date, end_date=end_date)
+        pd.set_option("display.max_columns", None)
+        data["datetime"] = data.index
+        data["datetime"] = data["datetime"].apply(lambda t: dt.datetime.strptime(t[0], "%Y-%m-%d %H:%M:%S"))
+        data["date"] = data["datetime"].apply(lambda datetime: datetime.date())
+        data["time"] = data["datetime"].apply(lambda datetime: datetime.time())
+        data.index = data["datetime"]
+        # data = data[["date", "time", "price", 'buy1', 'buy2', 'buy3', 'sale1', 'sale2',
+        #              'sale3', 'bc1', 'bc2', 'bc3', 'sc1', 'sc2', 'sc3']]
+        data = data[["date", "time", "price"]]
+        # data.to_csv(ticker + '_' + year + ".csv", index=False)
+        return data
+
+    def download_tickdata(self, ticker):
+        df1 = self.download_one_year_data(ticker, "2017")
+        df2 = self.download_one_year_data(ticker, "2018")
+        df3 = self.download_one_year_data(ticker, "2019")
+        df = pd.concat([df1, df2, df3])
+        df.to_csv("E:\\tickdata\\" + ticker + ".csv", index=None)
+        print("Data saved to: " + "E:\\tickdata\\" + ticker + ".csv")
+
+    def opt_func(self):
+        self.multi_backtest()
+        return self.printStat().sum()
+
+    def calibrate(self):
+        fn = self.opt_func(),
+        space  = {"n_iter":hp.choice("n_iter",range(30,50)),
+         "eta":hp.uniform("eta",0.05,0.5)}
+        algo = tpe.suggest,
+        max_evals = 100
+
+
 
 
 if __name__ == "__main__":
-    obj = Strategy(1, 1, 1, "SZ000002.csv", fake=False)
-    # obj.slice()
-    # obj.basic_statistics()
-    obj.multi_backtest(0,0,0)
+    obj = Strategy("SH510500", fake=False)
+    obj.multi_backtest()
     obj.printStat()
-
 
 
