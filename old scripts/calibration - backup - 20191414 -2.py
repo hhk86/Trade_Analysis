@@ -12,12 +12,11 @@ if __name__ == "__main__":
     from jinja2 import Template
     from dateutil.parser import parse as dateparse
     from hyperopt import fmin, tpe, hp
-
     sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
     import TSLPy3 as ts
 
-
 class TsTickData(object):
+
 
     def __enter__(self):
         if ts.Logined() is False:
@@ -25,14 +24,15 @@ class TsTickData(object):
             self.__tsLogin()
             return self
 
+
     def __tsLogin(self):
         ts.ConnectServer("tsl.tinysoft.com.cn", 443)
         dl = ts.LoginServer("fzzqjyb", "fz123456")
         print('天软登陆成功')
 
     def __exit__(self, *arg):
-        ts.Disconnect()
-        print('天软连接断开')
+                ts.Disconnect()
+                print('天软连接断开')
 
     def ticks(self, code, start_date, end_date):
         ts_template = Template('''setsysparam(pn_stock(),'SH510500');
@@ -66,13 +66,15 @@ class TsTickData(object):
             raise Exception("Error when execute tsl")
 
 
-def backtest_slice(q, name, i, arg_dict, plot=False):
+def backtest_slice(q, name, i,  arg_dict, plot=False):
     obj = Strategy(name, False)
     obj.defaultParam(arg_dict)
     obj.backtest(plot=plot)
     stat_df = obj.stat_df
     q.put(stat_df)
     # print("Process end", i)
+
+
 
 
 class Strategy():
@@ -87,8 +89,7 @@ class Strategy():
                 path = ticker
                 self.all_data = pd.read_csv(path)
             else:
-                print("The tick data of", ticker,
-                      "does not exit.\nAutomatically downloading data...\nIt will take about 15 minutes.")
+                print("The tick data of", ticker, "does not exit.\nAutomatically downloading data...\nIt will take about 15 minutes.")
                 self.download_tickdata(ticker)
                 self.all_data = pd.read_csv("E:\\tickdata\\" + ticker + ".csv")
         self.all_data["price"] = self.all_data["price"].apply(lambda x: round(x, 3))
@@ -121,26 +122,30 @@ class Strategy():
         sw13 = arg_dict["sw13"]
         sw14 = arg_dict["sw14"]
 
+
+
         multiplier = arg_dict["multiplier"]
         ns1 = arg_dict["ns1"]
         ns2 = arg_dict["ns2"]
         ns3 = arg_dict["ns3"]
         ns4 = arg_dict["ns4"]
         ns5 = arg_dict["ns5"]
-        con1 = arg_dict["con1"]
-        con2 = arg_dict["con2"]
-        con3 = arg_dict["con3"]
-        con4 = arg_dict["con4"]
-        con5 = arg_dict["con5"]
-        rapb = arg_dict["rapb"]
-        raps = arg_dict["raps"]
-        # con1 = 2
-        # con2 = 6
-        # con3 = 3
-        # con4 = 2
-        # con5 = 5
+        # con1 = arg_dict["con1"]
+        # con2 = arg_dict["con2"]
+        # con3 = arg_dict["con3"]
+        # con4 = arg_dict["con4"]
+        # con5 = arg_dict["con5"]
         # rapb = arg_dict["rapb"]
         # raps = arg_dict["raps"]
+        con1 = 2
+        con2 = 6
+        con3 = 3
+        con4 = 2
+        con5 = 5
+        rapb = arg_dict["rapb"]
+        raps = arg_dict["raps"]
+
+
 
         # Default parameter backup
         # self.P_NS_1 = int(round(3 * multiplier))
@@ -167,13 +172,14 @@ class Strategy():
         # # self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
         ################################
 
+
+
         self.P_NS_1 = int(round(ns1 * multiplier))
         self.P_NS_2 = int(round(ns2 * multiplier))
         self.P_NS_3 = int(round(ns3 * multiplier))
         self.P_NS_4 = int(round(ns4 * multiplier))
         self.P_NS_5 = int(round(ns5 * multiplier))
-        self.P_CON_1 = int(
-            round(con1 * multiplier))  # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
+        self.P_CON_1 = int(round(con1 * multiplier)) # 3 is a little bit better than 2, but its frequency is only 1/3 of P_CON_2 =3
         self.P_CON_2 = int(round(con2 * multiplier))
         self.P_CON_3 = int(round(con3 * multiplier))
         self.P_CON_4 = int(round(con4 * multiplier))
@@ -189,7 +195,7 @@ class Strategy():
         self.P_R_ADJ = 0
         # self.switch = [True, False,   False, False, False, False, False, False,  True, True, False, False, False, True] # best parameters when only use morning data
         # self.switch = [True,] * 14
-        self.switch = [sw1, sw2, sw3, sw4, sw5, sw6, sw7, sw8, sw9, sw10, sw11, sw12, sw13, sw14]
+        self.switch = [sw1, sw1, sw3, sw4, sw5, sw6, sw7, sw8, sw9, sw10, sw11, sw12, sw13, sw14]
         # self.switch = [True, False,    False, False, False, False, False, False,   True, True, False, False, False, False]
 
     def get_oneday_data(self, i: int) -> pd.DataFrame:
@@ -256,9 +262,9 @@ class Strategy():
         z1, z2, z3, z4 = ls
         # Type 1
         d1, d2, h1 = z2, z3, z4
-        if switch[2] and d1 >= p1 and d2 < 0 and h1 >= p1 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
+        if switch[2] and d1 >= p1 and d2 < 0 and h1 >= p1  and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
             return 'B', "NS1", h1
-        if switch[3] and d1 <= - p1 and d2 > 0 and h1 <= - p1 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
+        if switch[3] and d1 <= - p1  and d2 > 0 and h1 <= - p1  and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
             return 'S', "NS1", h1
         # Type2 - should be closed
         d1, d2, h1 = z1 + z2, z3, z4
@@ -268,6 +274,10 @@ class Strategy():
             return 'S', "NS2", h1
         # Type3
         d1, d2, h1 = z1, z2 + z3, z4
+        # if d1 >= p4 and d2 < 0 and h1 >= p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
+        #     return 'B', "NS3", h1
+        # if d1 <= -p4 and d2 > 0 and h1 <= -p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
+        #     return 'S', "NS3", h1
         if switch[6] and d1 >= p4 and d2 < 0 and h1 >= p5 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
             return 'B', "NS3", h1
         if switch[7] and d1 <= -p5 and d2 > 0 and h1 <= -p4 and abs(d2) <= abs(d1) / 2 and abs(h1) >= 2 * abs(d2):
@@ -309,17 +319,17 @@ class Strategy():
         d1, d2, h1 = z2, z3, z4
         if switch[8] and d1 >= p1 and d2 >= 0 and h1 >= p1 and abs(h1) >= abs(d2) + 2:
             return 'B', "CON1", h1
-        if switch[9] and d1 <= -p1 and d2 <= 0 and h1 <= -p1 and abs(h1) >= abs(d2) + 2:
+        if switch[9] and d1 <= -p1 and d2 <= 0  and h1 <= -p1 and abs(h1) >= abs(d2) + 2:
             return 'S', "CON1", h1
         # Type2
         d1, d2, h1 = z1 + z2, z3, z4
-        if switch[10] and d1 >= p2 and d2 >= 0 and h1 >= p3 and abs(h1) >= abs(d2) + 2:
+        if switch[10] and d1 >= p2 and d2 >= 0  and h1 >= p3 and abs(h1) >= abs(d2) + 2:
             return 'B', "CON2", h1
         if switch[11] and d1 <= -p2 and d2 <= 0 and h1 <= -p3 and abs(h1) >= abs(d2) + 2:
             return 'S', "CON2", h1
         # Type3
         d1, d2, h1 = z1, z2 + z3, z4
-        if switch[12] and d1 >= p4 and d2 >= 0 and h1 >= p5 and abs(h1) >= abs(d2) + 2:
+        if switch[12] and d1 >= p4 and d2 >= 0  and h1 >= p5 and abs(h1) >= abs(d2) + 2:
             return 'B', "CON3", h1
         if switch[13] and d1 <= -p4 and d2 <= 0 and h1 <= -p5 and abs(h1) >= abs(d2) + 2:
             return 'S', "CON3", h1
@@ -389,10 +399,10 @@ class Strategy():
             if ypos != self.long_start_price:
                 color = "red" if ypos > self.long_start_price else "blue"
                 x = self.xMl[self.long_start_pos]
-                ax.plot([x, x + 0.001], [self.long_start_price, ypos], color=color, linewidth=1)
+                ax.plot([x, x + 0.001], [self.long_start_price, ypos], color=color, linewidth =1)
         # print("close at", "\tn:", n, "\txpos:", xpos, "\typos:", ypos, "\tslope:",self.slope_list[n], "\tpick:", self.long_peak_price)
         self.pnl += ypos - self.long_start_price
-        self.update_stat_df(pos_type="long", close_price=ypos)
+        self.update_stat_df(pos_type = "long", close_price=ypos)
         self.initDailyParam(pos_type="long")
 
     def closeShortPosition(self, ax: plt, n: int, xpos: int, ypos: float, sig_type: int) -> None:
@@ -403,12 +413,11 @@ class Strategy():
                 marker = "xk"
             else:
                 raise ValueError("Wrong sig_type:" + sig_type)
-            ax.plot([xpos, ], [ypos, ], marker, markersize=5)
+            ax.plot([xpos, ], [ypos,], marker, markersize=5)
             if ypos != self.short_start_price:
                 color = "red" if ypos < self.short_start_price else "blue"
                 x = self.xMl[self.short_start_pos]
-                ax.plot([x, x + 0.001], [self.short_start_price, 2 * self.short_start_price - ypos], color=color,
-                        linewidth=1)
+                ax.plot([x, x + 0.001], [self.short_start_price, 2 * self.short_start_price - ypos], color=color, linewidth =1)
         # print("close at", "\tn:", n, "\txpos:", xpos, "\typos:", ypos, "\tslope:",self.slope_list[n], "\tnadir:", self.short_nadir_price)
         self.pnl += self.short_start_price - ypos
         self.update_stat_df(pos_type="short", close_price=ypos)
@@ -454,6 +463,7 @@ class Strategy():
         H1 = round(1000 * (point - start))
         trigger_price = start
 
+
         w1 = self.P_W_1
         w2 = self.P_W_2
         l1 = self.P_L_1
@@ -462,7 +472,7 @@ class Strategy():
         h1w = self.P_h1_W
         adjust = self.P_R_ADJ
 
-        if not reach_6 and sig_type == "RAP":
+        if  not reach_6 and sig_type == "RAP":
             if time_pass <= 2:
                 trigger_price = start - 0.006 * sign
             else:
@@ -480,7 +490,7 @@ class Strategy():
             if abs(H1) <= l1:
                 trigger_price = start + w1 * (H1 + h1w * h1) / 1000
             elif abs(H1) <= l2:
-                trigger_price = start + w2 * (H1 + h1w * h1) / 1000 - 0.001 * sign
+                trigger_price = start + w2 *  (H1 + h1w * h1)  / 1000 - 0.001 * sign
             else:
                 trigger_price = point - 0.001 * l3 * sign
 
@@ -511,7 +521,7 @@ class Strategy():
         else:
             raise ValueError("Wrong sig_type:" + sig_type)
         color = "gray"
-        ax.plot(self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], color=color, linewidth=1)
+        ax.plot(self.xMl[n - shift: n + 1], self.yMl[n - shift: n + 1], color=color,linewidth=1)
         # ax.text(xpos - 30, ypos - 0.004, sig, fontsize=12, color=color, fontweight="bold")
         ax.text(xpos - 120, ypos - 0.03, sig_type, fontsize=6, color=color, fontweight="bold")
 
@@ -551,7 +561,7 @@ class Strategy():
         else:
             return False, -1
 
-    def checkOpenSignal(self, n: int) -> (str, str):
+    def checkOpenSignal(self,  n: int) -> (str, str):
         if n >= 4 and n <= 234 * 2:
             sig, sig_type, h1 = self.getRapidOS(self.slope_list[n - 1: n + 1])
             if sig:
@@ -567,7 +577,7 @@ class Strategy():
 
     def backtest(self, plot=False) -> None:
         self.plot = plot
-        self.stat_df = pd.DataFrame(columns=["sig_type", "direction", "open_price", "close_price", "pnl", "date"])
+        self.stat_df = pd.DataFrame(columns= ["sig_type", "direction", "open_price", "close_price", "pnl", "date"])
         # for date in self.date_list:
         #     self.backtest_oneday(date)
         for i in range(len(self.date_list)):
@@ -590,6 +600,7 @@ class Strategy():
                 sig, close_type = self.checkCloseShortSignal(n, ypos, delta)
                 if sig is True:
                     self.closeShortPosition(ax, n, xpos, ypos, close_type)
+
 
             if self.long_num < 1 or self.short_num < 1:
                 # Check open signals when we do not have full position
@@ -617,7 +628,7 @@ class Strategy():
 
         if self.plot is True:
             ax.set_xticks(self.xtick, self.xticklabel)
-            re = round((math.exp(252 * self.pnl / 5 / 10) - 1) * 100, 1)
+            re = round((math.exp( 252 * self.pnl / 5 / 10) - 1) * 100,1)
             ax.set_title(date + " PNL:" + str(round(self.pnl, 3)) + " R: " + str(re) + '%')
             fig.savefig("backtest/" + self.date + ".png")
             plt.close()
@@ -642,19 +653,20 @@ class Strategy():
             if name is None:
                 self.stat.to_csv("stat.csv")
             else:
-                self.stat.to_csv("calibration/stat_" + name + '_' + str(mean) + ".csv")
+                self.stat.to_csv("calibration/stat_"+ name + '_' + str(mean) + ".csv")
         return self.stat
+
 
     def multi_backtest(self, arg_dict=None, plot=False):
 
-        if not os.path.exists("E:\\data_slice\\" + self.ticker + "\\data_slice_9.csv"):
+        if not os.path.exists("E:\\data_slice\\" + self.ticker +"\\data_slice_9.csv"):
             self.slice()
         df = pd.DataFrame()
         q = Queue()
         jobs = list()
         for i in range(0, 10):
-            ticker = "E:\\data_slice\\" + self.ticker + "\\data_slice_" + str(i) + ".csv"
-            p = Process(target=backtest_slice, args=(q, ticker, i, arg_dict, plot))
+            ticker = "E:\\data_slice\\" + self.ticker +"\\data_slice_" + str(i) + ".csv"
+            p = Process(target=backtest_slice, args = (q, ticker, i, arg_dict, plot))
             jobs.append(p)
             p.start()
             # print("Start process" + str(i))
@@ -664,6 +676,7 @@ class Strategy():
             job.join()
         self.stat_df = df
 
+
     def slice(self, process_num=10):
         n = process_num
         N = len(self.date_list)
@@ -672,7 +685,7 @@ class Strategy():
             print("Re-writing the data slice of", self.ticker)
         except:
             print("Writing new data slice of", self.ticker)
-        os.makedirs("E:\\data_slice\\" + self.ticker)
+        os.makedirs("E:\\data_slice\\" + self.ticker )
         # for parent, dirnames, filenames in os.walk("E:\\data_slice\\" + ticker):
         #     file_list = filenames
         # for file in file_list:
@@ -683,9 +696,11 @@ class Strategy():
             data_slice.to_csv("E:\\data_slice\\" + self.ticker + "\\data_slice_" + str(i) + ".csv", index=False)
         print("Slice data into " + str(n) + " part.\n Save data slice to: " + "E:\\data_slice\\" + self.ticker)
 
+
     def makeHyperParam(self):
         std = self.all_data.groupby("date").std()["price"].mean()
         self.multiplier_base = std / 0.0214
+
 
     def download_one_year_data(self, ticker, year):
         start_date = year + "0101"
@@ -716,233 +731,127 @@ class Strategy():
         print("Data saved to: " + "E:\\tickdata\\" + ticker + ".csv")
 
     def opt_func(self, arg_dict):
+        tic = dt.datetime.now()
         self.multi_backtest(arg_dict, plot=False)
-        self.printStat(printSave=False)
+        self.printStat()
         if self.stat is None:
             print("No trades under this parameter set!")
             return 0
-        self.stat["log_sum"] = self.stat["mean"].apply(lambda x: x - 0.001).mul(
-            self.stat["count"].apply(lambda x: math.log10(x + 1)))
-        pos_stat = self.stat[self.stat["mean"] >= 0.001]
-        best_positive_sum = pos_stat["mean"].mul(pos_stat["count"]).sum()
-        if best_positive_sum > self.best_positive_sum:
-            self.best_arg_dict = arg_dict
-            self.best_positive_sum = best_positive_sum
+        self.stat["log_sum"] = self.stat["mean"].mul(self.stat["count"].apply(lambda x: math.log10(x + 1)))
+        toc = dt.datetime.now()
+        print(toc - tic)
         return - self.stat["log_sum"].sum()
         # return - self.printStat()["sum"].sum()
 
-
     def calibrate(self):
         self.makeHyperParam()
-        # # arg_dict  = {"sw1": hp.choice("sw1",[True, False]),
-        # #              "sw2": hp.choice("sw2", [True, False]),
-        # #              "sw3": hp.choice("sw3", [True, False]),
-        # #              "sw4": hp.choice("sw4", [True, False]),
-        # #              "sw5": hp.choice("sw5", [True, False]),
-        # #              "sw6": hp.choice("sw6", [True, False]),
-        # #              "sw7": hp.choice("sw7", [True, False]),
-        # #              "sw8": hp.choice("sw8", [True, False]),
-        # #              "sw9": hp.choice("sw9", [True, False]),
-        # #              "sw10": hp.choice("sw10", [True, False]),
-        # #              "sw11": hp.choice("sw11", [True, False]),
-        # #              "sw12": hp.choice("sw12", [True, False]),
-        # #              "sw13": hp.choice("sw13", [True, False]),
-        # #              "sw14": hp.choice("sw14", [True, False]),
-        # #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
-        # #              "ns1":hp.choice("ns1",[3]),
-        # #              "ns2": hp.choice("ns2", [6]),
-        # #             "ns3": hp.choice("ns3", [3]),
-        # #             "ns4": hp.choice("ns4", [4]),
-        # #             "ns5": hp.choice("ns5", [4]),
-        # #              "rapb": hp.choice("rapb", [9]),
-        # #              "raps": hp.choice("raps", [9]),}
-        # # best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
-        # # print("The calibrated switch:")
-        # # print(best)
-        # # self.multi_backtest(best, plot=True)
-        # # print("Returns with best parameters:")
-        # # self.printStat()
-        # # a = input("Pause!\n")
-        # # sw1 = best["sw1"]
-        # # sw2 = best["sw2"]
-        # # sw3 = best["sw3"]
-        # # sw4 = best["sw4"]
-        # # sw5 = best["sw5"]
-        # # sw6 = best["sw6"]
-        # # sw7 = best["sw7"]
-        # # sw8 = best["sw8"]
-        # # sw9 = best["sw9"]
-        # # sw10 = best["sw10"]
-        # # sw11 = best["sw11"]
-        # # sw12 = best["sw12"]
-        # # sw13 = best["sw13"]
-        # # sw14 = best["sw14"]
-        # # print(sw1, sw2, sw3, sw4, sw5, sw6, sw7,sw8, sw9, sw10, sw11, sw12, sw13, sw14)
-        #
-        # # arg_dict  = {"sw1": hp.choice("sw1",[sw1,]),
-        # #              "sw2": hp.choice("sw2", [sw2,]),
-        # #              "sw3": hp.choice("sw3", [sw3,]),
-        # #              "sw4": hp.choice("sw4", [sw4,]),
-        # #              "sw5": hp.choice("sw5", [sw5,]),
-        # #              "sw6": hp.choice("sw6", [sw6,]),
-        # #              "sw7": hp.choice("sw7", [sw7,]),
-        # #              "sw8": hp.choice("sw8", [sw8,]),
-        # #              "sw9": hp.choice("sw9", [sw9,]),
-        # #              "sw10": hp.choice("sw10", [sw10,]),
-        # #              "sw11": hp.choice("sw11", [sw11,]),
-        # #              "sw12": hp.choice("sw12", [sw12,]),
-        # #              "sw13": hp.choice("sw13", [sw13,]),
-        # #              "sw14": hp.choice("sw14", [sw14,]),
-        # #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
-        # #              "ns1":hp.choice("ns1",range(1, 6)),
-        # #              "ns2": hp.choice("ns2", range(3, 10)),
-        # #             "ns3": hp.choice("ns3", range(1, 6)),
-        # #             "ns4": hp.choice("ns4", range(2, 8)),
-        # #             "ns5": hp.choice("ns5", range(2, 8)),
-        # #              "rapb": hp.choice("rapb", range(5, 15)),
-        # #              "raps": hp.choice("raps", range(5, 15)),}
-        #
-        arg_dict = dict()
-        for i in range(1, 15):
-            arg_dict["sw" + str(i)] = hp.choice("sw" + str(i), [True, False])
-        arg_dict["multiplier"] = hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base)
-        for key, value in zip(
-                ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
-                [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
-            arg_dict[key] = value
+        # arg_dict  = {"sw1": hp.choice("sw1",[True, False]),
+        #              "sw2": hp.choice("sw2", [True, False]),
+        #              "sw3": hp.choice("sw3", [True, False]),
+        #              "sw4": hp.choice("sw4", [True, False]),
+        #              "sw5": hp.choice("sw5", [True, False]),
+        #              "sw6": hp.choice("sw6", [True, False]),
+        #              "sw7": hp.choice("sw7", [True, False]),
+        #              "sw8": hp.choice("sw8", [True, False]),
+        #              "sw9": hp.choice("sw9", [True, False]),
+        #              "sw10": hp.choice("sw10", [True, False]),
+        #              "sw11": hp.choice("sw11", [True, False]),
+        #              "sw12": hp.choice("sw12", [True, False]),
+        #              "sw13": hp.choice("sw13", [True, False]),
+        #              "sw14": hp.choice("sw14", [True, False]),
+        #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
+        #              "ns1":hp.choice("ns1",[3]),
+        #              "ns2": hp.choice("ns2", [6]),
+        #             "ns3": hp.choice("ns3", [3]),
+        #             "ns4": hp.choice("ns4", [4]),
+        #             "ns5": hp.choice("ns5", [4]),
+        #              "rapb": hp.choice("rapb", [9]),
+        #              "raps": hp.choice("raps", [9]),}
+        # best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
+        # print("The calibrated switch:")
+        # print(best)
+        # self.multi_backtest(best, plot=True)
+        # print("Returns with best parameters:")
+        # self.printStat()
+        # a = input("Pause!\n")
+        # sw1 = best["sw1"]
+        # sw2 = best["sw2"]
+        # sw3 = best["sw3"]
+        # sw4 = best["sw4"]
+        # sw5 = best["sw5"]
+        # sw6 = best["sw6"]
+        # sw7 = best["sw7"]
+        # sw8 = best["sw8"]
+        # sw9 = best["sw9"]
+        # sw10 = best["sw10"]
+        # sw11 = best["sw11"]
+        # sw12 = best["sw12"]
+        # sw13 = best["sw13"]
+        # sw14 = best["sw14"]
+        # print(sw1, sw2, sw3, sw4, sw5, sw6, sw7,sw8, sw9, sw10, sw11, sw12, sw13, sw14)
+
+        # arg_dict  = {"sw1": hp.choice("sw1",[sw1,]),
+        #              "sw2": hp.choice("sw2", [sw2,]),
+        #              "sw3": hp.choice("sw3", [sw3,]),
+        #              "sw4": hp.choice("sw4", [sw4,]),
+        #              "sw5": hp.choice("sw5", [sw5,]),
+        #              "sw6": hp.choice("sw6", [sw6,]),
+        #              "sw7": hp.choice("sw7", [sw7,]),
+        #              "sw8": hp.choice("sw8", [sw8,]),
+        #              "sw9": hp.choice("sw9", [sw9,]),
+        #              "sw10": hp.choice("sw10", [sw10,]),
+        #              "sw11": hp.choice("sw11", [sw11,]),
+        #              "sw12": hp.choice("sw12", [sw12,]),
+        #              "sw13": hp.choice("sw13", [sw13,]),
+        #              "sw14": hp.choice("sw14", [sw14,]),
+        #             "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
+        #              "ns1":hp.choice("ns1",range(1, 6)),
+        #              "ns2": hp.choice("ns2", range(3, 10)),
+        #             "ns3": hp.choice("ns3", range(1, 6)),
+        #             "ns4": hp.choice("ns4", range(2, 8)),
+        #             "ns5": hp.choice("ns5", range(2, 8)),
+        #              "rapb": hp.choice("rapb", range(5, 15)),
+        #              "raps": hp.choice("raps", range(5, 15)),}
+
+
+        arg_dict  = {"sw1": hp.choice("sw1",[0,]),
+                     "sw2": hp.choice("sw2", [0,]),
+                     "sw3": hp.choice("sw3", [0,]),
+                     "sw4": hp.choice("sw4", [1,]),
+                     "sw5": hp.choice("sw5", [0,]),
+                     "sw6": hp.choice("sw6", [1,]),
+                     "sw7": hp.choice("sw7", [0,]),
+                     "sw8": hp.choice("sw8", [1,]),
+                     "sw9": hp.choice("sw9", [0,]),
+                     "sw10": hp.choice("sw10", [1,]),
+                     "sw11": hp.choice("sw11", [0,]),
+                     "sw12": hp.choice("sw12", [1,]),
+                     "sw13": hp.choice("sw13", [1,]),
+                     "sw14": hp.choice("sw14", [1,]),
+                    "multiplier":hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base),
+                     "ns1":hp.choice("ns1",range(1, 6)),
+                     "ns2": hp.choice("ns2", range(3, 10)),
+                    "ns3": hp.choice("ns3", range(1, 6)),
+                    "ns4": hp.choice("ns4", range(2, 8)),
+                    "ns5": hp.choice("ns5", range(2, 8)),
+                     "rapb": hp.choice("rapb", range(5, 15)),
+                     "raps": hp.choice("raps", range(5, 15)),}
+
+
 
         print("Debug the arg_dict:")
         print(arg_dict)
 
-        self.best_arg_dict = arg_dict
-        self.best_positive_sum = 0
-        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=150)
-        print(self.best_arg_dict)
-        for key, value in zip(
-                ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
-                [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
-            self.best_arg_dict[key] = value
-        # self.best_arg_dict = {'con1': 2, 'con2': 6, 'con3': 3, 'con4': 2, 'con5': 5, 'multiplier': 8.260205392004922,
-        #                       'ns1': 3, 'ns2': 4, 'ns3': 4, 'ns4': 5, 'ns5': 6, 'rapb': 9, 'raps': 9, 'sw1': True,
-        #                       'sw10': True, 'sw11': True, 'sw12': False, 'sw13': True, 'sw14': True, 'sw2': True,
-        #                       'sw3': False, 'sw4': True, 'sw5': True, 'sw6': True, 'sw7': True, 'sw8': True,
-        #                       'sw9': True}
-        self.multi_backtest(self.best_arg_dict, plot=False)
-        self.printStat()
-
-        self.stat["positive_tag"] = self.stat["mean"].apply(lambda x: True if x >= 0.001 else False)
-        all_positive = self.stat["positive_tag"].cumprod()[-1]
-        total_count = self.stat["count"].sum()
-        remain_param_num = self.stat.shape[0]
-        while all_positive == 0 or total_count > 8000:
-            # Delete the worst signal
-            min_df = self.stat[self.stat["mean"] == self.stat["mean"].min()]
-            min_df["test"] = min_df.index
-            signal_pair = min_df.iloc[0, 4]
-            min_param = self.decode_signal(signal_pair)
-            print("Delete minimum parameter: " + min_param)
-            self.best_positive_sum = 0
-            self.best_arg_dict[min_param] = False
-
-            # Initialize new arg_list
-            arg_dict = dict()
-            for i in range(1, 15):
-                key = "sw" + str(i)
-                arg_dict[key] = self.best_arg_dict[key]
-                param, pmin, pmax = self.decode_sw(key)
-                if arg_dict[key] is True:
-                    arg_dict[param] = hp.choice(param, range(pmin, pmax))
-                else:
-                    arg_dict[param] = 0
-            arg_dict["multiplier"] = hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base)
-            best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals= 15 * remain_param_num)
-            print(self.best_arg_dict)
-            self.multi_backtest(self.best_arg_dict, plot=False)
-            self.printStat()
-            self.stat["positive_tag"] = self.stat["mean"].apply(lambda x: True if x >= 0.001 else False)
-            all_positive = self.stat["positive_tag"].cumprod()[-1]
-            total_count = self.stat["count"].sum()
-            remain_param_num = self.stat.shape[0]
-        print('-' * 300)
-        self.multi_backtest(self.best_arg_dict, plot=True)
-        self.printStat()
-
-
-
-
-    def decode_signal(self, signal_pair):
-        signal_type, direction = signal_pair
-        direct = 0 if signal_pair == 'B' else 1
-        if signal_type == "RAP" and direction == "B":
-            return "sw1"
-        elif signal_type == "RAP" and direction == "S":
-            return "sw2"
-        elif signal_type == "NS1" and direction == "B":
-            return "sw3"
-        elif signal_type == "NS1" and direction == "S":
-            return "sw4"
-        elif signal_type == "NS2" and direction == "B":
-            return "sw5"
-        elif signal_type == "NS2" and direction == "S":
-            return "sw6"
-        elif signal_type == "NS3" and direction == "B":
-            return "sw7"
-        elif signal_type == "NS3" and direction == "S":
-            return "sw8"
-        elif signal_type == "CON1" and direction == "B":
-            return "sw9"
-        elif signal_type == "CON1" and direction == "S":
-            return "sw10"
-        elif signal_type == "CON2" and direction == "B":
-            return "sw11"
-        elif signal_type == "CON2" and direction == "S":
-            return "sw12"
-        elif signal_type == "CON3" and direction == "B":
-            return "sw13"
-        elif signal_type == "CON3" and direction == "S":
-            return "sw14"
-
-    def decode_sw(self, sw):
-        if sw == "sw1":
-            return "rapb", 6, 14
-        elif sw == "sw2":
-            return "raps", 6, 14
-        elif sw == "sw3":
-            return "ns1", 2, 5
-        elif sw == "sw4":
-            return "ns2", 2, 5
-        elif sw == "sw5":
-            return "ns3", 3, 6
-        elif sw == "sw6":
-            return "ns4", 3, 6
-        elif sw == "sw7":
-            return "ns5", 4, 7
-        elif sw == "sw8":
-            return "ns6", 5, 8
-        elif sw == "sw9":
-            return "con1", 1, 4
-        elif sw == "sw10":
-            return "con2", 1, 4
-        elif sw == "sw11":
-            return "con3", 5, 8
-        elif sw == "sw12":
-            return "con4", 2, 5
-        elif sw == "sw13":
-            return "con5", 2, 5
-        elif sw == "sw14":
-            return "con6", 4, 7
-
-
+        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=20)
+        return best
 
 
 
 
 if __name__ == "__main__":
-    obj = Strategy("SZ000001", fake=False)
-    # arg_dict = {'multiplier': 21.93032593075645, 'sw1': 1, 'sw10': 0, 'sw11': 0, 'sw12': 1, 'sw13': 0, 'sw14': 0, 'sw2': 1,
-    #  'sw3': 0, 'sw4': 1, 'sw5': 0, 'sw6': 1, 'sw7': 0, 'sw8': 0, 'sw9': 1}
-    # for key, value in zip(["ns1", "ns2", "ns3", "ns4", "ns5", "rapb", "raps"], [3, 4, 4, 5, 6, 9, 9]):
-    #     arg_dict[key] = value
-    # obj.multi_backtest(arg_dict, plot=True)
+    obj = Strategy("SZ000002", fake=False)
+    # obj.multi_backtest({'multiplier': 16.728070763490322, 'ns1': 4, 'ns2': 1, 'ns3': 2, 'ns4': 3, 'ns5': 0, 'rapb': 1, 'raps': 9, 'sw1': 0, 'sw10': 0, 'sw11': 0, 'sw12': 0, 'sw13': 0, 'sw14': 0, 'sw2': 0, 'sw3': 0, 'sw4': 0, 'sw5': 0, 'sw6': 0, 'sw7': 0, 'sw8': 0, 'sw9': 0})
     # print(obj.printStat())
-    obj.calibrate()
+    print(obj.calibrate())
+
+

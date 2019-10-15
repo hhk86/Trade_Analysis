@@ -802,31 +802,31 @@ class Strategy():
         # #              "rapb": hp.choice("rapb", range(5, 15)),
         # #              "raps": hp.choice("raps", range(5, 15)),}
         #
-        arg_dict = dict()
-        for i in range(1, 15):
-            arg_dict["sw" + str(i)] = hp.choice("sw" + str(i), [True, False])
-        arg_dict["multiplier"] = hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base)
-        for key, value in zip(
-                ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
-                [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
-            arg_dict[key] = value
-
-        print("Debug the arg_dict:")
-        print(arg_dict)
-
-        self.best_arg_dict = arg_dict
-        self.best_positive_sum = 0
-        best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=150)
-        print(self.best_arg_dict)
-        for key, value in zip(
-                ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
-                [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
-            self.best_arg_dict[key] = value
-        # self.best_arg_dict = {'con1': 2, 'con2': 6, 'con3': 3, 'con4': 2, 'con5': 5, 'multiplier': 8.260205392004922,
-        #                       'ns1': 3, 'ns2': 4, 'ns3': 4, 'ns4': 5, 'ns5': 6, 'rapb': 9, 'raps': 9, 'sw1': True,
-        #                       'sw10': True, 'sw11': True, 'sw12': False, 'sw13': True, 'sw14': True, 'sw2': True,
-        #                       'sw3': False, 'sw4': True, 'sw5': True, 'sw6': True, 'sw7': True, 'sw8': True,
-        #                       'sw9': True}
+        # arg_dict = dict()
+        # for i in range(1, 15):
+        #     arg_dict["sw" + str(i)] = hp.choice("sw" + str(i), [True, False])
+        # arg_dict["multiplier"] = hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base)
+        # for key, value in zip(
+        #         ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
+        #         [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
+        #     arg_dict[key] = value
+        #
+        # print("Debug the arg_dict:")
+        # print(arg_dict)
+        #
+        # self.best_arg_dict = arg_dict
+        # self.best_positive_sum = 0
+        # best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals=200)
+        # print(self.best_arg_dict)
+        # for key, value in zip(
+        #         ["ns1", "ns2", "ns3", "ns4", "ns5", "con1", "con2", "con3", "con4", "con5", "rapb", "raps"],
+        #         [3, 4, 4, 5, 6, 2, 6, 3, 2, 5, 9, 9]):
+        #     self.best_arg_dict[key] = value
+        self.best_arg_dict = {'con1': 2, 'con2': 6, 'con3': 3, 'con4': 2, 'con5': 5, 'multiplier': 8.260205392004922,
+                              'ns1': 3, 'ns2': 4, 'ns3': 4, 'ns4': 5, 'ns5': 6, 'rapb': 9, 'raps': 9, 'sw1': True,
+                              'sw10': True, 'sw11': True, 'sw12': False, 'sw13': True, 'sw14': True, 'sw2': True,
+                              'sw3': False, 'sw4': True, 'sw5': True, 'sw6': True, 'sw7': True, 'sw8': True,
+                              'sw9': True}
         self.multi_backtest(self.best_arg_dict, plot=False)
         self.printStat()
 
@@ -855,7 +855,7 @@ class Strategy():
                 else:
                     arg_dict[param] = 0
             arg_dict["multiplier"] = hp.uniform("multiplier", self.multiplier_base, 10 * self.multiplier_base)
-            best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals= 15 * remain_param_num)
+            best = fmin(self.opt_func, arg_dict, algo=tpe.suggest, max_evals= 20 * remain_param_num)
             print(self.best_arg_dict)
             self.multi_backtest(self.best_arg_dict, plot=False)
             self.printStat()
@@ -864,7 +864,6 @@ class Strategy():
             total_count = self.stat["count"].sum()
             remain_param_num = self.stat.shape[0]
         print('-' * 300)
-        self.multi_backtest(self.best_arg_dict, plot=True)
         self.printStat()
 
 
@@ -938,7 +937,7 @@ class Strategy():
 
 
 if __name__ == "__main__":
-    obj = Strategy("SZ000001", fake=False)
+    obj = Strategy("SZ000002", fake=False)
     # arg_dict = {'multiplier': 21.93032593075645, 'sw1': 1, 'sw10': 0, 'sw11': 0, 'sw12': 1, 'sw13': 0, 'sw14': 0, 'sw2': 1,
     #  'sw3': 0, 'sw4': 1, 'sw5': 0, 'sw6': 1, 'sw7': 0, 'sw8': 0, 'sw9': 1}
     # for key, value in zip(["ns1", "ns2", "ns3", "ns4", "ns5", "rapb", "raps"], [3, 4, 4, 5, 6, 9, 9]):
