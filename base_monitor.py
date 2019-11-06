@@ -94,10 +94,10 @@ if __name__ == "__main__":
     bnext.on_clicked(stop_func)
     left, bottom, width, height = 0.15, 0.05, 0.5, 0.1
     slider_ax_min = plt.axes([left, bottom, width, height])
-    slider_min = Slider(slider_ax_min, 'Min', valmin=-60, valmax=10, valinit=-60)
+    slider_min = Slider(slider_ax_min, 'Min', valmin=-60, valmax=10, valstep=1, valinit=-60)
     slider_min.on_changed(update_min)
     slider_ax_max = plt.axes([left, bottom+ 0.15, width, height])
-    slider_max = Slider(slider_ax_max, 'Max', valmin=-60, valmax=10, valinit=10)
+    slider_max = Slider(slider_ax_max, 'Max', valmin=-60, valmax=10, valstep=1, valinit=10)
     slider_max.on_changed(update_max)
     ax.set_title("Working")
     t = Thread(target=monitor)
