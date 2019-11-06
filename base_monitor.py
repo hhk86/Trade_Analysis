@@ -1,17 +1,12 @@
-import pandas as pd
-import numpy as np
-import datetime as dt
+import random
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
-import math
 import time
 import sys
 sys.path.append("D:\\Program Files\\Tinysoft\\Analyse.NET")
 import TSLPy3 as ts
 from colorama import init
 init(strip=not sys.stdout.isatty()) # strip colors if stdout is redirected
-from termcolor import cprint
-from pyfiglet import figlet_format
 from threading import Thread
 
 
@@ -53,13 +48,14 @@ def monitor():
             future_price = tsl.getCurrentPrice("IC1911")
             index_price = tsl.getCurrentPrice("SH000905")
             base = future_price - index_price
-            print(base)
         if base <= val_min or base >= val_max:
-            ax.texts = list()
-            ax.text(0, 0.2, str(int(base)), fontdict={"color": "red", "fontsize": 180})
+            for i in range(30):
+                ax.texts = list()
+                ax.text(0 + random.random()/10, 0.2, str(int(base)), fontdict={"color": "red", "fontsize": 180})
+                plt.draw()
+                time.sleep(0.1)
             stop_func(None)
             ax.set_title("Suspend")
-            plt.draw()
         time.sleep(1)
 
 
@@ -68,10 +64,10 @@ def stop_func(event):
     stop = not stop
     if stop is False:
         ax.texts = list()
-        plt.title("Suspend")
+        ax.set_title("Working")
         plt.draw()
     else:
-        plt.title("Working")
+        ax.set_title("Suspend")
         plt.draw()
 
 
